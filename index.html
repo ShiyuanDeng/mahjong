@@ -62,6 +62,7 @@ p{margin:0}
 .seat{position:relative;background:var(--tile);color:var(--tile-ink);border:0;border-radius:10px;padding:8px 6px 9px;box-shadow:0 5px 0 var(--bamboo);display:flex;flex-direction:column;align-items:center;gap:1px;min-height:92px;min-width:0;text-align:center}
 .seat:active{transform:translateY(3px);box-shadow:0 2px 0 var(--bamboo)}
 .seat .wind{font-family:var(--display);font-weight:900;font-size:26px;line-height:1.1}
+.seat .wind small{font:700 13px var(--body)}
 .seat .who{font-weight:700;font-size:14px;line-height:1.2;overflow-wrap:anywhere;max-width:100%}
 .seat .pts{font-size:15px;font-variant-numeric:tabular-nums}
 .seat .pts.up{color:#17694A}.seat .pts.down{color:#B23A2C}
@@ -210,25 +211,77 @@ button.pat-main:disabled{opacity:.45;cursor:not-allowed}
 .dlg .box{background:var(--surface);border-radius:14px;padding:18px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:14px}
 .dlg p{margin:0}
 @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* Keep the session balance in sight on the table, reference pages and entry sheets. */
+.wrap{max-width:656px;gap:14px}
+.top{padding:8px 0 0;align-items:center}
+.top h1{display:flex;align-items:center;gap:13px;font-size:clamp(1.55rem,5vw,2.15rem);line-height:1.2;letter-spacing:-.035em}
+.top h1 small{display:block;font-size:.85rem;letter-spacing:.18em;margin-top:4px;color:var(--muted)}
+.brand-tile{width:34px;height:46px;border:1px solid #c8c4ae;background:var(--tile);border-radius:6px;box-shadow:0 4px #b19759,3px 5px 0 var(--felt-deep);display:grid;padding:5px}
+.brand-tile i{width:9px;height:9px;border:2px solid var(--tile-green);border-radius:50%;place-self:start}
+.brand-tile i:nth-child(2){place-self:center;border-color:var(--tile-red)}
+.brand-tile i:last-child{place-self:end;border-color:var(--tile-blue)}
+.top .rule{font-size:.82rem}
+.connection{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.connection .sync{flex-basis:auto;flex:1 1 135px}
+.share{background:var(--surface);border:1px solid var(--line);border-radius:9px;font-size:.85rem;font-weight:700;padding:9px 12px}
+.tally,.sheet-tally{background:var(--surface);color:var(--ink);padding:9px 14px 10px;border:1px solid var(--line);border-top:3px solid var(--felt);border-radius:11px}
+.tally{position:sticky;top:0;z-index:7;box-shadow:0 4px 14px rgba(10,39,26,.09)}
+.tally:empty{display:none}
+.tally-title{display:flex;align-items:baseline;justify-content:space-between;font-size:.78rem;color:var(--muted);gap:5px}
+.tally-title b{font-size:.85rem;color:var(--ink)}
+.balances{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:5px}
+.balances>div{padding:0 8px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:1px}
+.balances>div:first-child{padding-left:0;border:0}
+.tally-name{font-size:.82rem;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.balances .amt{font-size:1.18rem;line-height:1.15}
+.sheet-tally{border-radius:0;border-width:0 0 1px;width:100%;max-width:656px;margin:0 auto;flex-shrink:0}
+#resume{top:92px;z-index:6}
+.rule-card{scroll-margin-top:165px}
+.felt{background:radial-gradient(ellipse at 50% 40%,#297357,#14523c);gap:16px 10px;padding:22px 16px 25px;box-shadow:inset 0 0 0 3px var(--felt-deep),inset 0 0 0 7px #42735b,inset 0 0 0 8px #749878}
+.felt .wind small{font:600 .82rem var(--body)}
+.felt .seat{justify-content:center}.seat .pts small{font-size:.7rem;color:#53675a}
+.note{line-height:1.5}
+.sheet-head,.sheet-foot{flex:none}
+.sheet-foot{max-height:43dvh;overflow-y:auto}
+.sheet-foot .why{max-height:3.5em;overflow-y:auto}
+.sheet-body{min-height:0}
+body:has(.sheet:not([hidden])){overflow:hidden}
+.tile-example{margin:0}
+.tile-example figcaption{font-size:.8rem;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.tiles .tg{flex-wrap:wrap;max-width:100%}
+.rules-card p,.card p{overflow-wrap:anywhere}
+.pay-scroll{overflow-x:auto}
+.paytable th{text-align:center}
+.paytable thead tr:first-child th{border-bottom:1px solid var(--line);font-weight:700}
+.refs a,summary{color:var(--up);font-weight:700}
+.refs a{display:block;font-size:.88rem}
+summary{cursor:pointer;min-height:40px;padding-top:8px}
+.glossary{margin:8px 0}
+.glossary dt{font-weight:600}
+.glossary dd{margin:2px 0 10px;color:var(--muted)}
+@media(max-width:400px){.wrap{padding-left:10px;padding-right:10px}.tally{padding-left:9px;padding-right:9px}.felt{gap:12px 5px;padding-left:9px;padding-right:9px}.tally-title{font-size:.73rem}}
+@media(max-height:550px) and (orientation:landscape){.sheet-tally{padding:2px 8px}.sheet-tally .balances>div{flex-direction:row;gap:6px}.sheet-foot .in{gap:2px}.sheet-head,.sheet-foot{padding:4px 10px}.sheet-foot .why{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Mahjong Score Table</h1>
+    <h1><span class="brand-tile" aria-hidden="true"><i></i><i></i><i></i></span><span>Mahjong Score Table<small lang="zh-Hant">麻將記分桌</small></span></h1>
     <span class="rule" id="ruleline"></span>
-    <span class="sync" id="syncline" role="status"></span>
+    <div class="connection"><span class="sync" id="syncline" role="status"></span><span id="share-action"></span></div>
   </header>
+  <div id="tally" class="tally"></div>
   <div id="resume"></div>
   <main id="view"></main>
 </div>
 
-<nav class="nav" aria-label="Sections"><div class="in">
-  <a href="#table" data-tab="table"><span class="zh">檯</span>Table</a>
-  <a href="#leaderboard" data-tab="leaderboard"><span class="zh">榜</span>Leaders</a>
-  <a href="#history" data-tab="history"><span class="zh">局</span>History</a>
-  <a href="#rules" data-tab="rules"><span class="zh">番</span>Rules</a>
-  <a href="#setup" data-tab="setup"><span class="zh">人</span>Setup</a>
+<nav class="nav" aria-label="Sections 頁面"><div class="in">
+  <a href="#table" data-tab="table"><span class="zh" lang="zh-Hant">牌桌</span>Table</a>
+  <a href="#leaderboard" data-tab="leaderboard"><span class="zh" lang="zh-Hant">排名</span>Leaders</a>
+  <a href="#history" data-tab="history"><span class="zh" lang="zh-Hant">紀錄</span>History</a>
+  <a href="#rules" data-tab="rules"><span class="zh" lang="zh-Hant">規則</span>Rules</a>
+  <a href="#setup" data-tab="setup"><span class="zh" lang="zh-Hant">設定</span>Setup</a>
 </div></nav>
 
 <div class="sheet" id="handsheet" hidden role="dialog" aria-modal="true" aria-labelledby="hs-title"></div>
@@ -236,6 +289,8 @@ button.pat-main:disabled{opacity:.45;cursor:not-allowed}
 <div class="toast" id="toast" hidden role="status"></div>
 <div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div>
 
+<script src="rules-guide.js"></script>
+<script src="live-table.js"></script>
 <script>
 /* =====================================================================
    RULE SETS. To add another variant (riichi, Sichuan, ...) add an entry
@@ -248,17 +303,17 @@ const RULESETS = {
     label: 'Hong Kong 香港',
     winds: [{zh:'東',en:'East'},{zh:'南',en:'South'},{zh:'西',en:'West'},{zh:'北',en:'North'}],
     options: [
-      {key:'minFan', label:'Minimum fan to win (起糊)', def:3,
-       choices:[[0,'0 fan (雞糊 allowed)'],[1,'1 fan'],[2,'2 fan'],[3,'3 fan'],[4,'4 fan']]},
-      {key:'limitFan', label:'Limit (爆棚)', def:10,
-       choices:[[8,'8 fan'],[10,'10 fan'],[13,'13 fan']]},
-      {key:'discardPay', label:'Win off a discard', def:'half',
-       choices:[['half','半銃: discarder pays double, others single'],['full','全銃: discarder pays for everyone']]}
+      {key:'minFan', label:'Minimum fan to win · 起和番數', def:3,
+       choices:[[0,'0 fan / 番 · Basic win allowed / 可和雞糊'],[1,'1 fan / 番'],[2,'2 fan / 番'],[3,'3 fan / 番'],[4,'4 fan / 番']]},
+      {key:'limitFan', label:'Fan cap · 番數上限（爆棚）', def:10,
+       choices:[[8,'8 fan / 番'],[10,'10 fan / 番'],[13,'13 fan / 番']]},
+      {key:'discardPay', label:'Who pays on a discard? · 放銃時誰付分？', def:'half',
+       choices:[['half','Discarder pays half · 半銃（放銃者付一半）'],['full','Discarder pays all · 全銃（放銃者全付）']]}
     ],
     // points for 0..13 fan. Self-draw: each loser pays 2x this.
     baseByFan: [1,2,4,8,16,24,32,48,64,96,128,192,256,384],
     selfDraw: {id:'zimo', zh:'自摸', en:'Self-draw', fan:1, group:'win',
-      desc:'You draw the winning tile yourself. It is added for you when you record the hand as a self-draw.'},
+      desc:'You draw the winning tile yourself. Selecting Self-draw adds this fan automatically on an ordinary win. Flower wins have their own fixed value.'},
     groups: [
       {id:'win', zh:'食糊', en:'How the hand was won'},
       {id:'shape', zh:'牌型', en:'Shape of the hand'},
@@ -268,36 +323,36 @@ const RULESETS = {
     ],
     patterns: [
       {id:'menqing', group:'win', zh:'門前清', en:'Concealed hand', fan:1,
-       desc:'You showed no melds before winning. Every set came from your own draws. A concealed kong is fine.',
-       extra:'Counts whether you win off a discard or by self-draw.'},
+       desc:'You made no exposed chows, pungs or kongs before winning. A concealed kong is allowed.',
+       extra:'House bonus. You may claim a discard for the winning tile.'},
       {id:'qianggang', group:'win', zh:'搶槓', en:'Robbing a kong', fan:1, needs:'discard',
        desc:'Another player adds a fourth tile to an exposed pung, and that tile completes your hand.',
        extra:'Record it as a win off that player.'},
-      {id:'gangshang', group:'win', zh:'槓上開花', en:'Win on a kong', fan:1, needs:'self',
+      {id:'gangshang', group:'win', zh:'槓上開花', en:'Kong replacement win', fan:1, needs:'self', excl:['huashang'],
        desc:'You declare a kong and the replacement tile completes your hand.',
-       extra:'Self-draw only, so 自摸 is added as well.'},
+       extra:'The self-draw fan also counts.'},
       {id:'haidi', group:'win', zh:'海底撈月', en:'Last tile', fan:1, needs:'self',
        desc:'You win on the very last tile drawn from the wall.',
-       extra:'Self-draw only, so 自摸 is added as well.'},
-      {id:'huashang', group:'win', zh:'花上自摸', en:'Win on a flower', fan:1, needs:'self',
+       extra:'The self-draw fan also counts.'},
+      {id:'huashang', group:'win', zh:'花上自摸', en:'Flower replacement win', fan:1, needs:'self', excl:['wuhua'],
        desc:'You draw a flower, and the replacement tile completes your hand.',
-       extra:'Self-draw only. Not every table plays this one.'},
+       extra:'House bonus. The self-draw fan also counts.'},
 
-      {id:'pinghu', group:'shape', zh:'平糊', en:'All chows', fan:1, excl:['duidui','hunyaojiu'],
+      {id:'pinghu', group:'shape', zh:'平糊', en:'All chows', fan:1, excl:['duidui','hunyaojiu','dragon','seatwind','roundwind','xiaosanyuan','dasanyuan'],
        desc:'Four chows (runs of three) and a pair. No pungs or kongs.', ex:'123m 456m 234p 678s 55p'},
       {id:'duidui', group:'shape', zh:'對對糊', en:'All pungs', fan:3,
        desc:'Four pungs or kongs and a pair. No chows.', ex:'222m 555p 111p 777s 33s'},
       {id:'hunyise', group:'shape', zh:'混一色', en:'Mixed one suit', fan:3, excl:['qingyise'],
        desc:'Tiles from one suit only, plus winds or dragons.', ex:'123m 345m 888m SSS FF'},
-      {id:'qingyise', group:'shape', zh:'清一色', en:'Full flush', fan:7,
+      {id:'qingyise', group:'shape', zh:'清一色', en:'Full flush', fan:7, excl:['hunyaojiu','dragon','seatwind','roundwind','xiaosanyuan','dasanyuan'],
        desc:'Every tile from the same suit. No winds or dragons.', ex:'123p 345p 567p 888p 99p'},
       {id:'hunyaojiu', group:'shape', zh:'混么九', en:'Mixed terminals', fan:1, implies:['duidui'],
-       desc:'Only 1s, 9s, winds and dragons, all in pungs.', ex:'111m 999p 999s EEE CC',
-       extra:'Ticking it also ticks 對對糊, 4 fan for the two together. Also called 花么九.'},
+       desc:'Four pungs or kongs and a pair. Use only 1s, 9s, winds and dragons, including both suited and honour tiles.', ex:'111m 999p 999s EEE CC',
+       extra:'Selecting this also counts All pungs, for 4 fan together.'},
 
       {id:'dragon', group:'honour', zh:'箭刻', en:'Dragon pung (中 發 白)', fan:1, max:2, excl:['xiaosanyuan','dasanyuan'],
-       desc:'A pung or kong of 中, 發 or 白. 1 fan for each one.', ex:'CCC',
-       extra:'With two dragon pungs and a pair of the third, use 小三元 instead.'},
+       desc:'Score 1 fan for each pung or kong of red, green or white dragons.', ex:'CCC',
+       extra:'With two dragon pungs and a pair of the third dragon, select Little three dragons.'},
       {id:'seatwind', group:'honour', zh:'門風', en:'Seat wind pung', fan:1,
        desc:'A pung or kong of your own seat wind. The table screen shows each player\'s wind.', ex:'SSS',
        extra:'Example shown for the South seat.'},
@@ -305,46 +360,48 @@ const RULESETS = {
        desc:'A pung or kong of the round wind.', ex:'EEE',
        extra:'If the round wind is also your seat wind, tick both for 2 fan.'},
       {id:'xiaosanyuan', group:'honour', zh:'小三元', en:'Little three dragons', fan:5, excl:['dasanyuan'],
-       desc:'Pungs of two dragons and a pair of the third.', ex:'CCC FFF PP 123m 456s',
+       desc:'Pungs or kongs of two dragons and a pair of the third.', ex:'CCC FFF PP 123m 456s',
        extra:'The 5 fan already covers the two dragon pungs.'},
       {id:'dasanyuan', group:'honour', zh:'大三元', en:'Big three dragons', fan:8,
-       desc:'Pungs of all three dragons.', ex:'CCC FFF PPP 123m 55s',
+       desc:'A pung or kong of each of the three dragons.', ex:'CCC FFF PPP 123m 55s',
        extra:'The 8 fan already covers the dragon pungs.'},
-      {id:'xiaosixi', group:'honour', zh:'小四喜', en:'Little four winds', fan:6,
-       desc:'Pungs of three winds and a pair of the fourth.', ex:'EEE SSS WWW NN 123m',
-       extra:'Some tables play this as a limit hand. If yours does, add fan with the house adjustment.'},
+      {id:'xiaosixi', group:'limit', zh:'小四喜', en:'Little four winds', fan:'limit',
+       desc:'Pungs or kongs of three different winds, plus a pair of the fourth wind.', ex:'EEE SSS WWW NN 123m'},
 
       {id:'wuhua', group:'flower', zh:'無花', en:'No flowers', fan:1, excl:['zhenghua','yitaihua','qihua','bahua'],
        desc:'You hold no flower or season tiles at all.'},
       {id:'zhenghua', group:'flower', zh:'正花', en:'Own flower', fan:1, max:2,
        desc:'A flower or season whose number matches your seat: East 1, South 2, West 3, North 4.',
        extra:'Up to two: one flower and one season.'},
-      {id:'yitaihua', group:'flower', zh:'一台花', en:'Set of four flowers', fan:2,
+      {id:'yitaihua', group:'flower', zh:'一台花', en:'Set of four flowers', fan:1,
        desc:'All four flowers (梅 蘭 菊 竹) or all four seasons (春 夏 秋 冬).',
-       extra:'Your own flower inside the set still counts as 正花.'},
-      {id:'qihua', group:'flower', zh:'七隻花', en:'Seven flowers (花糊)', fan:3, excl:['bahua'],
-       desc:'You have collected seven of the eight flower tiles. You may claim the win at once.'},
+       extra:'Also select Own flower once for the seat-matching tile in this set. Together they give 2 fan.'},
+      {id:'qihua', group:'flower', zh:'七隻花', en:'Seven flowers', fan:3, needs:'self', standalone:true,
+       desc:'When you draw your seventh flower or season, you may immediately win before taking a replacement tile.',
+       extra:'Select Self-draw. The whole win is 3 fan, including the draw and flowers.'},
 
       {id:'shisanyao', group:'limit', zh:'十三么', en:'Thirteen orphans', fan:'limit',
        desc:'One each of every 1, 9, wind and dragon, plus a second copy of any one of them.', ex:'19m 19p 19s ESWN CFP C'},
       {id:'jiulian', group:'limit', zh:'九子連環', en:'Nine gates', fan:'limit',
        desc:'1112345678999 in one suit, all concealed, plus one more tile of that suit.', ex:'1112345678999m 5m'},
       {id:'kankan', group:'limit', zh:'坎坎糊', en:'Four concealed pungs', fan:'limit',
-       desc:'Four pungs that you drew yourself, none claimed from a discard. Also called 四暗刻.', ex:'222m 666m 444p 888s 55p'},
+       desc:'Four concealed pungs and a pair, without a kong. A discard may complete the pair. You must draw the fourth pung yourself.', ex:'222m 666m 444p 888s 55p'},
       {id:'dasixi', group:'limit', zh:'大四喜', en:'Big four winds', fan:'limit',
-       desc:'Pungs of all four winds.', ex:'EEE SSS WWW NNN 55m'},
+       desc:'A pung or kong of each of the four winds, plus a pair.', ex:'EEE SSS WWW NNN 55m'},
       {id:'ziyise', group:'limit', zh:'字一色', en:'All honours', fan:'limit',
        desc:'Only winds and dragons.', ex:'EEE WWW CCC FFF NN'},
       {id:'qingyaojiu', group:'limit', zh:'清么九', en:'All terminals', fan:'limit',
        desc:'Only 1s and 9s.', ex:'111m 999m 111p 999s 11s'},
       {id:'shiba', group:'limit', zh:'十八羅漢', en:'Four kongs', fan:'limit',
        desc:'Four kongs and a pair, 18 tiles in all.'},
+      {id:'gangshanggang', group:'limit', zh:'槓上槓自摸', en:'Consecutive kong win', fan:'limit', needs:'self',
+       desc:'Declare two kongs in succession and win on the second replacement draw. There must be no flower replacement between them.'},
       {id:'tianhu', group:'limit', zh:'天糊', en:'Heavenly hand', fan:'limit', needs:'self',
        desc:'The dealer wins with the first 14 tiles dealt. Record as self-draw.'},
       {id:'dihu', group:'limit', zh:'地糊', en:'Earthly hand', fan:'limit', needs:'discard',
        desc:'A player wins off the dealer\'s very first discard.'},
-      {id:'bahua', group:'limit', zh:'八隻花', en:'Eight flowers (大花糊)', fan:'limit',
-       desc:'You have collected all eight flower tiles.'}
+      {id:'bahua', group:'limit', zh:'八隻花', en:'Eight flowers', fan:'limit', needs:'self', standalone:true,
+       desc:'Collect all eight flowers and seasons and declare a self-drawn limit win.'}
     ],
     // who pays what for one winning hand. Returns {base, deltas:{playerId: points}}
     settle({fan, winner, from, seats}, o){
@@ -396,7 +453,7 @@ function fixState(s){
 }
 function load(){ try { return fixState(JSON.parse(localStorage.getItem(KEY))); } catch(e){ return freshState(); } }
 function keep(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
-function save(){ keep(); if (sync.mode === 'live' && !ro()) { dirty = true; flush(); } }
+function save(){ if (liveTable.active) { liveTable.saveChange(); return; } keep(); if (sync.mode === 'live' && !ro()) { dirty = true; flush(); } }
 
 /* ============================ shared scores ============================
    One shared document holds the whole score sheet. Everyone with the page
@@ -405,8 +462,8 @@ function save(){ keep(); if (sync.mode === 'live' && !ro()) { dirty = true; flus
    on this phone. */
 const sync = {hosted:!!(window.claude && window.claude.use), mode:'local', canWrite:null, exists:false, slow:false, lost:false, shown:null, last:null};
 let ref = null, writing = false, dirty = false, slowTimer = null;
-const ro = () => sync.mode === 'live' && sync.canWrite === false;
-const RO_OK = new Set(['lbSort','copy','dlgNo']);
+const ro = () => liveTable.viewer || (sync.mode === 'live' && sync.canWrite === false);
+const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink']);
 function refresh(){ render(); if (sheetOpen && draft) renderHand(true); }
 function adopt(d){
   sync.shown = d.stamp;
@@ -425,8 +482,8 @@ async function flush(){
   } catch(e){
     if (e && e.code === 'invalid_argument' && sync.canWrite !== true) {
       sync.canWrite = false; if (sync.last) adopt(sync.last);
-      toast('You can watch the scores here. Only the scorekeeper can change them.');
-    } else toast('Could not save to the shared scores. This phone still has them.');
+      toast('View only · 僅供查看，只有記分員可修改。');
+    } else toast('Sync failed. Saved on this device. 同步失敗，分數保存在此裝置。');
     refresh();
   }
   writing = false; if (dirty) flush();
@@ -457,14 +514,15 @@ async function connect(){
   ref.onSnapshot(onSnap, () => { clearTimeout(slowTimer); ref = null; sync.mode = 'local'; sync.lost = true; refresh(); });
 }
 function syncLine(){
-  if (sync.mode === 'connecting') return ['', 'Connecting to shared scores\u2026'];
+  if (liveTable.active) return [liveTable.online ? 'live' : 'warn', liveTable.status()];
+  if (sync.mode === 'connecting') return ['', 'Connecting · 正在連線…'];
   if (sync.mode === 'live') {
-    if (sync.slow) return ['warn', 'Shared scores cannot be reached yet. This may be out of date.'];
-    if (!sync.exists) return ['warn', ro() ? 'No shared scores yet' : 'Not shared yet. Scores are on this phone only.'];
-    return ['live', ro() ? 'Live scores, view only' : 'Live. Everyone with the page sees these scores.'];
+    if (sync.slow) return ['warn', 'Waiting for live scores · 等待連線，分數可能尚未更新'];
+    if (!sync.exists) return ['warn', ro() ? 'No shared scores yet · 尚無共享分數' : 'Saved on this device · 尚未共享'];
+    return ['live', ro() ? 'Live · View only 即時分數・僅供查看' : 'Live scores · 分數即時共享'];
   }
-  if (sync.lost) return ['warn', 'Lost the shared scores. Changes stay on this phone.'];
-  return ['', sync.hosted ? 'Scores on this phone only. Sign in to Claude to see the shared table.' : 'Scores saved on this phone only'];
+  if (sync.lost) return ['warn', 'Offline. Saving on this device. 連線中斷，目前僅儲存在此裝置。'];
+  return ['', sync.hosted ? 'Saved here. Sign in to Claude for shared scores. 已儲存在此裝置，登入 Claude 可查看共享分數。' : 'Saved on this device only · 分數僅存在此裝置'];
 }
 
 const R = () => RULESETS[state.ruleset];
@@ -507,21 +565,27 @@ function settleUp(tot){
 
 /* ============================ scoring a hand ============================ */
 function conflicts(id){
-  const set = new Set(pat(id).excl || []);
-  R().patterns.forEach(q => { if ((q.excl || []).includes(id)) set.add(q.id); });
+  const p = pat(id), set = new Set(p.excl || []);
+  R().patterns.forEach(q => {
+    if (q.id !== id && (p.standalone || q.standalone || (q.excl || []).includes(id))) set.add(q.id);
+  });
   return set;
 }
 function allowed(p, d){
-  if (!p.needs) return true;
-  if (!d.from) return true;
-  return p.needs === 'self' ? d.from === 'self' : d.from !== 'self';
+  if (p.id === 'tianhu' || p.id === 'dihu') {
+    const g = game(), dealer = g.seats[tableState(g).dealer];
+    if (p.id === 'tianhu' && d.winner !== dealer) return false;
+    if (p.id === 'dihu' && (d.winner === dealer || (d.from && d.from !== dealer))) return false;
+  }
+  return !p.needs || !d.from || (p.needs === 'self') === (d.from === 'self');
 }
 function scoreDraft(d){
   const r = R(), o = O(), lines = [];
   let total = 0, limit = false;
-  if (d.from === 'self') { lines.push({zh:r.selfDraw.zh, fan:r.selfDraw.fan, n:1}); total += r.selfDraw.fan; }
+  const special = r.patterns.find(p => p.standalone && d.picks[p.id] && allowed(p, d));
+  if (d.from === 'self' && !special) { lines.push({zh:r.selfDraw.zh, fan:r.selfDraw.fan, n:1}); total += r.selfDraw.fan; }
   r.patterns.forEach(p => {
-    const n = d.picks[p.id] || 0; if (!n) return;
+    const n = d.picks[p.id] || 0; if (!n || (special && p !== special) || !allowed(p, d)) return;
     if (p.fan === 'limit') { limit = true; lines.push({zh:p.zh, fan:'limit', n:1}); }
     else { total += p.fan * n; lines.push({zh:p.zh, fan:p.fan, n}); }
   });
@@ -542,25 +606,45 @@ function tilesHTML(ex){
       : [...tok].map(c => `<span class="tile t-h t-${c}"><b>${c === 'P' ? '' : HON[c]}</b></span>`);
     return `<span class="tg">${ts.join('')}</span>`;
   });
-  const label = ex.split(' ').map(tok => { const m = tok.match(/^(\d+)([mps])$/); return m ? m[1] + SUIT[m[2]] : [...tok].map(c => HON[c]).join(''); }).join(', ');
-  return `<div class="tiles" role="img" aria-label="Example: ${label}">${groups.join('')}</div>`;
+  const suits = {m:'characters 萬', p:'dots 筒', s:'bamboo 索'};
+  const honours = {E:'East 東', S:'South 南', W:'West 西', N:'North 北', C:'red dragon 中', F:'green dragon 發', P:'white dragon 白'};
+  const label = ex.split(' ').map(tok => {
+    const group = tok.match(/^(\d+)([mps])$/);
+    return group ? group[1] + ' ' + suits[group[2]] : [...tok].map(c => honours[c]).join(', ');
+  }).join(' · ');
+  return `<figure class="tile-example"><div class="tiles" aria-hidden="true">${groups.join('')}</div><figcaption>${label}</figcaption></figure>`;
 }
-const fanLabel = f => f === 'limit' ? '爆棚' : f + '番';
+const fanLabel = f => f === 'limit' ? 'Limit 爆棚' : f + ' fan 番';
 
 /* ============================ views ============================ */
 const $ = id => document.getElementById(id);
 function currentView(){ const h = location.hash.slice(1); return ['table','leaderboard','history','rules','setup'].includes(h) ? h : 'table'; }
 
+function tallyHTML(){
+  const g = game(), totals = allTotals(), ts = tableState(g);
+  return `<div class="tally-title"><b>Running totals <span lang="zh-Hant">總分</span></b><span>Game 場 ${state.games.length} · Hand 局 ${ts.handNo}</span></div>
+    <div class="balances">${g.seats.map(pid => `<div><span class="tally-name" title="${esc(pname(pid))}">${esc(pname(pid))}</span><b class="amt ${cls(totals[pid])}">${signed(totals[pid])}</b></div>`).join('')}</div>`;
+}
+function renderTally(){
+  $('tally').innerHTML = liveTable.active && !liveTable.available ? '' : tallyHTML();
+}
+function renderSharing(){
+  const canCreate = !liveTable.active && !sync.hosted;
+  $('share-action').innerHTML = liveTable.shareable ? '<button class="share" data-a="copyTableLink">Copy table link · 複製觀戰連結</button>'
+    : canCreate ? '<button class="share" data-a="createLiveTable">Share live table · 共享牌桌</button>' : '';
+}
 function render(){
   const v = currentView(), r = R(), o = O();
   document.querySelectorAll('.nav a').forEach(a => a.dataset.tab === v ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
-  $('ruleline').textContent = `${r.label} · ${o.minFan}番起糊 · ${o.limitFan}番爆棚`;
+  $('ruleline').textContent = `${r.label} · ${o.minFan} fan minimum 起和 · ${o.limitFan} fan limit 封頂`;
   const sl = syncLine(); $('syncline').className = 'sync ' + sl[0]; $('syncline').textContent = sl[1];
   document.body.classList.toggle('ro', ro());
   $('resume').innerHTML = draft && !sheetOpen
-    ? `<div class="resume"><span>Hand in progress: <b>${esc(pname(draft.winner))}</b> wins</span><button data-a="resumeHand">Back to hand</button></div>` : '';
-  $('view').innerHTML = ({table:viewTable, leaderboard:viewLeaderboard, history:viewHistory, rules:viewRules, setup:viewSetup})[v]();
-  if (ro()) $('view').querySelectorAll('input,select').forEach(e => e.disabled = true);
+    ? `<div class="resume"><span>Scoring 計番中 · <b>${esc(pname(draft.winner))}</b></span><button data-a="resumeHand">Resume 繼續</button></div>` : '';
+  $('view').innerHTML = liveTable.active && !liveTable.available && v !== 'rules' ? '<p class="card">' + esc(liveTable.status()) + '</p>' : ({table:viewTable, leaderboard:viewLeaderboard, history:viewHistory, rules:viewRules, setup:viewSetup})[v]();
+  renderTally();
+  renderSharing();
+  if (ro() || liveTable.locked) $('view').querySelectorAll('input,select').forEach(e => e.disabled = true);
   if (v === 'rules' && focusRule) {
     const el = $('pat-' + focusRule);
     if (el) { el.classList.add('focus'); el.scrollIntoView({block:'start'}); }
@@ -572,31 +656,31 @@ function viewTable(){
   const r = R(), g = game(), ts = tableState(g), gt = gameTotals(g), tot = allTotals();
   const seats = g.seats.map((pid, i) => {
     const w = r.winds[(i - ts.dealer + 4) % 4];
-    return `<button class="seat pos-${i}" data-a="win" data-p="${pid}" aria-label="${esc(pname(pid))}, ${w.en} seat, ${signed(gt[pid])} points. Tap if this player won.">
-      ${i === ts.dealer ? '<span class="zhuang" title="Dealer">莊</span>' : ''}
-      <span class="wind">${w.zh}</span><span class="who">${esc(pname(pid))}</span><span class="pts ${cls(gt[pid])}">${signed(gt[pid])}</span></button>`;
+    return `<button class="seat pos-${i}" data-a="win" data-p="${pid}" aria-label="${esc(pname(pid))}, ${w.en} seat ${w.zh}家, ${signed(gt[pid])} points 分. Record win 記錄和牌。">
+      ${i === ts.dealer ? '<span class="zhuang" title="Dealer 莊家">莊</span>' : ''}
+      <span class="wind">${w.zh} <small>${w.en}</small></span><span class="who">${esc(pname(pid))}</span><span class="pts ${cls(gt[pid])}">${signed(gt[pid])} <small>this game 本場</small></span></button>`;
   }).join('');
   const nHands = state.games.reduce((n, x) => n + x.hands.length, 0);
   const top = Object.keys(tot).sort((x, y) => tot[y] - tot[x])[0];
   const rw = r.winds[ts.round];
   return `
     ${sync.mode === 'live' && !sync.exists ? (ro()
-      ? '<p class="note">The scorekeeper has not shared any scores yet. The table below is only an example.</p>'
-      : '<div class="resume"><span>These scores are on this phone only so far.</span><button data-a="shareNow">Share them</button></div>') : ''}
-    ${ro() && sync.exists ? '<p class="note">You are watching live. Only the scorekeeper can record hands.</p>' : ''}
-    ${state.example ? '<p class="note eo">These are example names. Rename or add players in Setup, then choose who sits where.</p>' : ''}
-    <div class="status"><span><b>Game ${state.games.length}</b></span><span>Round wind <b>${rw.zh} ${rw.en}</b></span><span>Dealer <b>${esc(pname(g.seats[ts.dealer]))}</b></span></div>
+      ? '<p class="note">Showing an example until the scorekeeper shares the table. 記分員尚未共享分數，以下為示例。</p>'
+      : '<div class="resume"><span>Scores are on this device. 分數僅存在此裝置。</span><button data-a="shareNow">Share 共享</button></div>') : ''}
+    ${ro() && sync.exists ? '<p class="note">Watching live. The scorekeeper records each hand. 分數即時更新，由記分員登記。</p>' : ''}
+    ${state.example ? '<p class="note eo">Change names and choose seats in Setup. 到「設定」修改姓名、安排座位。</p>' : ''}
+    <div class="status"><span><b>Game ${state.games.length} · 第 ${state.games.length} 場</b></span><span>Round 圈風 <b>${rw.zh} ${rw.en}</b></span><span>Dealer 莊家 <b>${esc(pname(g.seats[ts.dealer]))}</b></span></div>
     <div class="felt">${seats}
-      <div class="centre"><span class="round">${rw.zh}圈</span><span class="hand">Hand ${ts.handNo}</span><button class="eo" data-a="drawHand">流局 Draw</button></div>
+      <div class="centre"><span class="round">${rw.zh}圈</span><span class="hand">Hand ${ts.handNo} · 第 ${ts.handNo} 局</span><button class="eo" data-a="drawHand">流局 Draw</button></div>
     </div>
-    <p class="hint eo">Tap the player who won the hand.</p>
+    <p class="hint eo">Tap the winner to score. 點選和牌者記分。</p>
     <div class="row eo">
-      <button class="btn grow" data-a="openSeats">Change seats / new game</button>
-      <button class="btn" data-a="undoAsk" ${g.hands.length ? '' : 'disabled'}>Undo last hand</button>
+      <button class="btn grow" data-a="openSeats">Choose seats 換座開桌</button>
+      <button class="btn" data-a="undoAsk" ${g.hands.length ? '' : 'disabled'}>Undo last hand 撤銷上一局</button>
     </div>
     <a class="card leadlink" href="#leaderboard"><span class="who">${nHands && tot[top] > 0
-      ? `<span class="sub">Leading after ${nHands} hand${nHands > 1 ? 's' : ''}</span><span><b>${esc(pname(top))}</b> <b class="amt up">${signed(tot[top])}</b></span>`
-      : '<span class="sub">Nobody is ahead yet</span><span><b>Leaderboard</b></span>'}</span><span class="go">Leaderboard \u203A</span></a>`;
+      ? `<span class="sub">Leader after ${nHands} hand${nHands > 1 ? 's' : ''} · ${nHands} 局後領先</span><span><b>${esc(pname(top))}</b> <b class="amt up">${signed(tot[top])}</b></span>`
+      : '<span class="sub">All square · 目前平手</span>'}</span><span class="go">Standings 排名</span></a>`;
 }
 
 /* ============================ leaderboard ============================ */
@@ -618,44 +702,50 @@ function viewLeaderboard(){
   const max = Math.max(1, ...list.map(x => Math.abs(x.pts)));
   const rows = list.map((x, i) => `<li class="${i === 0 && x.played ? 'first' : ''}">
     <span class="rk">${i + 1}</span>
-    <span class="nm">${esc(pname(x.id))}${seated.has(x.id) ? '<span class="tag">at table</span>' : ''}</span>
+    <span class="nm">${esc(pname(x.id))}${seated.has(x.id) ? '<span class="tag">Seated 在座</span>' : ''}</span>
     <span class="amt tot ${cls(x.pts)}">${signed(x.pts)}</span>
     <span class="bar" aria-hidden="true">${x.pts ? `<i class="${cls(x.pts)}" style="width:${(Math.abs(x.pts) / max * 50).toFixed(1)}%"></i>` : ''}</span>
     <span class="st">${x.played
-      ? `${state.money > 0 ? `<span><b>${cashSigned(x.pts)}</b></span>` : ''}<span>Won <b>${x.wins}</b> of <b>${x.played}</b> hands (${Math.round(x.rate * 100)}%)</span><span>自摸 <b>${x.zimo}</b></span><span>出銃 <b>${x.dealin}</b></span><span>Best <b>${x.best ? x.best + '番' : '\u2013'}</b></span>`
-      : '<span>No hands played yet</span>'}</span></li>`).join('');
+      ? `${state.money > 0 ? `<span><b>${cashSigned(x.pts)}</b></span>` : ''}<span>Wins / hands 和牌／局數 <b>${x.wins} / ${x.played}</b> (${Math.round(x.rate * 100)}%)</span><span>Self-draws 自摸 <b>${x.zimo}</b></span><span>Deal-ins 放銃 <b>${x.dealin}</b></span><span>Best 最高番 <b>${x.wins ? x.best + ' fan' : '\u2013'}</b></span>`
+      : '<span>No hands yet · 尚未出賽</span>'}</span></li>`).join('');
   const chip = (k, label) => `<button class="chip" data-a="lbSort" data-k="${k}" aria-pressed="${key === k}">${label}</button>`;
   return `
     <section class="card"><h2><span class="zh">排行榜</span>Leaderboard</h2>
-      <p class="sub">Every game so far. 出銃 counts how often a player discarded the winning tile.</p>
-      <div class="chips" role="group" aria-label="Rank by">${chip('pts', 'Points')}${chip('wins', 'Hands won')}${chip('rate', 'Win rate')}</div>
+      <p class="sub">All games combined. A deal-in means another player won on your discard.<br><span lang="zh-Hant">統計所有場次。放銃指別人用你打出的牌和牌。</span></p>
+      <div class="chips" role="group" aria-label="Rank by 排序">${chip('pts', 'Points 分數')}${chip('wins', 'Wins 和牌數')}${chip('rate', 'Win rate 勝率')}</div>
       <ol class="lb">${rows}</ol>
     </section>
-    <section class="card"><h2>Settle up</h2>
-      ${pays.length ? `<ul class="list">${pays.map(x => `<li><span class="name"><b>${esc(pname(x.from))}</b> pays <b>${esc(pname(x.to))}</b></span><span class="amt num">${state.money > 0 ? cash(x.n) + ' <small class="sub">' + x.n + ' pts</small>' : x.n}</span></li>`).join('')}</ul>` : '<p class="sub">Nobody owes anything yet.</p>'}
-      <div class="row"><button class="btn" data-a="copy">Copy scores as text</button></div>
+    <section class="card"><h2>Settle up 結算</h2>
+      ${pays.length ? `<ul class="list">${pays.map(x => `<li><span class="name"><b>${esc(pname(x.from))}</b> pays 付給 <b>${esc(pname(x.to))}</b></span><span class="amt num">${state.money > 0 ? cash(x.n) + ' <small class="sub">' + x.n + ' pts 分</small>' : x.n + ' pts 分'}</span></li>`).join('')}</ul>` : '<p class="sub">All settled · 無需付款</p>'}
+      <div class="row"><button class="btn" data-a="copy">Copy scores 複製分數</button></div>
     </section>`;
 }
 
+function patternLineName(line, rules){
+  const [name, count] = String(line).split('×');
+  const pattern = [rules.selfDraw, ...rules.patterns].find(p => p.zh === name);
+  if (!pattern) return String(line);
+  return pattern.en + ' ' + name + (count ? ' ×' + count : '');
+}
 function handRowHTML(h, n, r){
   const head = h.kind === 'draw'
     ? `<span class="zh">流局</span><span>Draw, no winner</span>`
-    : `<b>${esc(pname(h.winner))}</b><span>${h.from ? 'off ' + esc(pname(h.from)) : '自摸 self-draw'}</span><span class="fanpill ${h.limit ? 'limit' : ''}">${h.limit ? '爆棚 ' : ''}${Number(h.fan)}番</span>`;
+    : `<b>${esc(pname(h.winner))}</b><span>${h.from ? 'wins · 和牌 · Discarder 放銃者 ' + esc(pname(h.from)) : '自摸 self-draw'}</span><span class="fanpill ${h.limit ? 'limit' : ''}">${h.limit ? 'Limit 爆棚 · ' : ''}${Number(h.fan)} fan 番</span>`;
   const deltas = h.kind === 'draw' ? '' : `<div class="deltas num">${Object.keys(h.deltas).filter(p => h.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(h.deltas[p])}">${signed(h.deltas[p])}</b></span>`).join('')}</div>`;
-  return `<div class="hand-row"><div class="hand-head"><span class="no">#${n} ${r.winds[h.round].zh}圈</span>${head}</div>
-    ${h.lines && h.lines.length ? `<div class="sub zh">${h.lines.map(esc).join(' · ')}</div>` : ''}${deltas}</div>`;
+  return `<div class="hand-row"><div class="hand-head"><span class="no">#${n} · ${r.winds[h.round].en} round ${r.winds[h.round].zh}圈</span>${head}</div>
+    ${h.lines && h.lines.length ? `<div class="sub zh">${h.lines.map(line => esc(patternLineName(line, r))).join(' · ')}</div>` : ''}${deltas}</div>`;
 }
 function viewHistory(){
   const r = R();
   const games = state.games.map((g, gi) => ({g, gi})).reverse().map(({g, gi}) => {
-    const seatLine = g.seats.map((p, i) => `${r.winds[i].zh} ${esc(pname(p))}`).join(' · ');
+    const seatLine = g.seats.map((p, i) => `${r.winds[i].en} ${r.winds[i].zh} ${esc(pname(p))}`).join(' · ');
     const gt = gameTotals(g);
     const hands = g.hands.map((h, i) => handRowHTML(h, i + 1, r)).reverse().join('');
-    return `<section class="card"><h2>Game ${gi + 1}</h2><p class="sub">Starting seats: ${seatLine}</p>
+    return `<section class="card"><h2>Game ${gi + 1} · 第 ${gi + 1} 場</h2><p class="sub">Starting seats 起始座位 · ${seatLine}</p>
       <div class="deltas num">${g.seats.map(p => `<span>${esc(pname(p))} <b class="amt ${cls(gt[p])}">${signed(gt[p])}</b></span>`).join('')}</div>
-      ${hands || '<p class="sub">No hands recorded yet.</p>'}</section>`;
+      ${hands || '<p class="sub">No hands recorded · 尚無對局紀錄</p>'}</section>`;
   }).join('');
-  return `${games}<div class="row eo"><button class="btn" data-a="undoAsk" ${game().hands.length ? '' : 'disabled'}>Undo last hand</button></div>`;
+  return `${games}<div class="row eo"><button class="btn" data-a="undoAsk" ${game().hands.length ? '' : 'disabled'}>Undo last hand 撤銷上一局</button></div>`;
 }
 
 function payRows(){
@@ -668,57 +758,65 @@ function payRows(){
   return rows.join('');
 }
 function ruleCard(p){
+  const zh = HK_GUIDE.patterns[p.id];
   return `<article class="card rule-card" id="pat-${p.id}">
-    <div class="rule-head"><span class="zh">${p.zh}</span><span class="en">${esc(p.en)}</span><span class="fanpill ${p.fan === 'limit' ? 'limit' : ''}">${fanLabel(p.fan)}${p.max > 1 ? ' each' : ''}</span></div>
-    <p>${esc(p.desc)}</p>${p.ex ? tilesHTML(p.ex) : ''}${p.extra ? `<p class="extra">${esc(p.extra)}</p>` : ''}</article>`;
+    <div class="rule-head"><span class="zh" lang="zh-Hant">${p.zh}</span><span class="en">${esc(p.en)}</span><span class="fanpill ${p.fan === 'limit' ? 'limit' : ''}">${fanLabel(p.fan)}${p.max > 1 ? ' / 組' : ''}</span></div>
+    <p>${esc(p.desc)}</p><p lang="zh-Hant">${esc(zh.desc)}</p>
+    ${p.ex ? tilesHTML(p.ex) : ''}${p.extra ? `<p class="extra">${esc(p.extra)}</p>` : ''}${zh.extra ? `<p class="extra" lang="zh-Hant">${esc(zh.extra)}</p>` : ''}</article>`;
 }
 function viewRules(){
   const r = R(), o = O();
   const groups = r.groups.map(g => {
     const ps = (g.id === r.selfDraw.group ? [r.selfDraw] : []).concat(r.patterns.filter(p => p.group === g.id));
-    return `<div class="grp-h"><span class="zh">${g.zh}</span><span>${g.en}</span></div>${ps.map(ruleCard).join('')}`;
+    return `<h2 class="grp-h"><span class="zh">${g.zh}</span><span>${g.en}</span></h2>${ps.map(ruleCard).join('')}`;
   }).join('');
   return `
-    <section class="card"><h2>${esc(r.label)} scoring</h2>
-      <p class="sub">Add up the fan of every 牌型 in the winning hand. A hand needs ${o.minFan} fan to win and stops counting at ${o.limitFan}. ${o.discardPay === 'full' ? 'The discarder pays for all three losers (全銃).' : 'The discarder pays double and the other two pay single (半銃).'} Change these in Setup.</p>
-      <div style="overflow-x:auto"><table class="paytable">
-        <thead><tr><th>Fan</th><th>自摸<br>each pays</th><th>自摸<br>winner</th><th>Discarder<br>pays</th><th>Others<br>pay</th><th>Winner<br>gets</th></tr></thead>
+    <section class="card"><h2>Hong Kong table rules · 港式麻將規則</h2>
+      <p>${esc(HK_GUIDE.notes.en)}</p><p lang="zh-Hant">${esc(HK_GUIDE.notes.zh)}</p>
+      <div class="refs">${HK_GUIDE.sources.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noreferrer">${esc(x.en)} · ${esc(x.zh)}</a>`).join('')}</div>
+      <details><summary>Tile terms · 麻將用語</summary><dl class="glossary">${HK_GUIDE.glossary.map(x => `<dt>${esc(x.en)}</dt><dd lang="zh-Hant">${esc(x.zh)}</dd>`).join('')}</dl></details></section>
+    <section class="card"><h2>Payments in points · 點數結算</h2>
+      <p>Minimum to win 起和 <b>${o.minFan} fan 番</b> · Limit 封頂 <b>${o.limitFan} fan 番</b></p>
+      <p>${o.discardPay === 'full' ? 'The discarder covers all three shares. 放銃者包付三家。' : 'The discarder pays twice the share of each other opponent. 放銃者付雙份，另兩家各付一份。'}</p>
+      <div class="pay-scroll"><table class="paytable">
+        <thead><tr><th rowspan="2">Fan<br>番</th><th colspan="2">Self-draw 自摸</th><th colspan="3">Discard 放銃</th></tr>
+        <tr><th>Each pays<br>每家付</th><th>Win<br>共得</th><th>Discarder<br>銃家付</th><th>Each other<br>旁家付</th><th>Win<br>共得</th></tr></thead>
         <tbody>${payRows()}</tbody></table></div>
     </section>${groups}`;
 }
 
 function moneyExample(){
-  if (!(state.money > 0)) return 'Set this and the Leaders page shows pounds next to the points.';
+  if (!(state.money > 0)) return 'Leave blank to track points only. 留空即可只計分。';
   const r = R(), o = O(), seats = ['a','b','c','d'];
   const lo = r.settle({fan:o.minFan, winner:'a', from:'b', seats}, o).deltas;
   const hi = r.settle({fan:o.limitFan, winner:'a', from:'b', seats}, o).deltas;
   const hs = r.settle({fan:o.limitFan, winner:'a', from:null, seats}, o).deltas;
-  return `With these rules: a ${o.minFan} fan hand off a discard costs the discarder ${cash(-lo.b)}. A limit hand (${o.limitFan} fan) costs the discarder ${cash(-hi.b)}, or ${cash(-hs.b)} each on a self-draw.`;
+  return `At ${o.minFan} fan the discarder pays ${cash(-lo.b)}. At the ${o.limitFan}-fan limit the discarder pays ${cash(-hi.b)}, or each opponent pays ${cash(-hs.b)} on a self-draw.<br><span lang="zh-Hant">${o.minFan} 番時放銃者付 ${cash(-lo.b)}。達到 ${o.limitFan} 番上限時，放銃者付 ${cash(-hi.b)}；若為自摸，其他三人各付 ${cash(-hs.b)}。</span>`;
 }
 function viewSetup(){
-  const r = R(), o = O(), tot = allTotals();
-  const pls = active().map(p => `<div class="pl"><input id="name-${p.id}" data-p="${p.id}" class="pname" value="${esc(p.name)}" maxlength="24" aria-label="Player name"><button class="eo" data-a="removePlayer" data-p="${p.id}">Remove</button></div>`).join('');
+  const r = R(), o = O();
+  const pls = active().map(p => `<div class="pl"><input id="name-${p.id}" data-p="${p.id}" class="pname" value="${esc(p.name)}" maxlength="24" aria-label="Player name 玩家姓名"><button class="eo" data-a="removePlayer" data-p="${p.id}">Remove 移除</button></div>`).join('');
   const opts = r.options.map(op => `<div class="field"><label for="opt-${op.key}">${op.label}</label>
     <select id="opt-${op.key}" data-opt="${op.key}">${op.choices.map(c => `<option value="${c[0]}" ${o[op.key] === c[0] ? 'selected' : ''}>${c[1]}</option>`).join('')}</select></div>`).join('');
   return `
-    <section class="card"><h2>Players</h2><p class="sub">Add everyone who might play tonight. Four sit at the table each game.</p>
+    <section class="card"><h2>Players 玩家</h2><p class="sub">Add your friends, then choose four seats. 加入玩家後，選四人入座。</p>
       ${pls}
-      <div class="pl eo"><input id="newname" placeholder="New player name" maxlength="24" aria-label="New player name"><button data-a="addPlayer">Add</button></div>
-      <div class="row eo"><button class="btn primary grow" data-a="openSeats">Choose seats for a game</button></div>
+      <div class="pl eo"><input id="newname" placeholder="Name 玩家姓名" maxlength="24" aria-label="New player name 新玩家姓名"><button data-a="addPlayer">Add 新增</button></div>
+      <div class="row eo"><button class="btn primary grow" data-a="openSeats">Choose seats 安排座位</button></div>
     </section>
-    <section class="card"><h2>Rules</h2>
-      <div class="field"><label for="ruleset">Rule set</label>
+    <section class="card"><h2>Rules 規則</h2>
+      <div class="field"><label for="ruleset">Rule set 玩法</label>
         <select id="ruleset">${Object.values(RULESETS).map(x => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${x.label}</option>`).join('')}</select></div>
       ${opts}
-      <p class="sub">Changes apply to hands recorded from now on. Earlier hands keep their points.</p>
+      <p class="sub">Changes apply from the next hand. 規則從下一局生效，已記分數維持原值。</p>
     </section>
-    <section class="card"><h2>Money</h2>
-      <div class="field"><label for="ppp">Pence per point (leave empty to count points only)</label>
-        <input id="ppp" type="number" inputmode="decimal" min="0" step="0.5" value="${state.money || ''}" placeholder="for example 5"></div>
+    <section class="card"><h2>Stakes 金額</h2>
+      <div class="field"><label for="ppp">Pence per point 每分幾便士</label>
+        <input id="ppp" type="number" inputmode="decimal" min="0" step="0.5" value="${state.money || ''}" placeholder="e.g. 5（例如 5）"></div>
       <p class="sub">${moneyExample()}</p>
     </section>
-    <section class="card eo"><h2>Start over</h2><p class="sub">This clears the scores for everyone who shares this table. Use Copy scores on the Leaders page first to keep a record.</p>
-      <div class="row"><button class="btn danger" data-a="resetAsk">Clear all scores</button></div>
+    <section class="card eo"><h2>Start over 重新開始</h2><p class="sub">Clears every game on this table. To keep a record, copy the scores from Leaders first.<br><span lang="zh-Hant">將清除本桌所有對局。若要保留紀錄，可先到「排名」複製分數。</span></p>
+      <div class="row"><button class="btn danger" data-a="resetAsk">Clear all scores 清除所有分數</button></div>
     </section>`;
 }
 
@@ -730,15 +828,15 @@ function renderHand(keepScroll){
   const others = g.seats.filter(p => p !== d.winner);
   const how = `<div class="chips">
     <button class="chip" data-a="from" data-p="self" aria-pressed="${d.from === 'self'}"><span class="zh">自摸</span> Self-draw</button>
-    ${others.map(p => `<button class="chip" data-a="from" data-p="${p}" aria-pressed="${d.from === p}">Off ${esc(pname(p))}</button>`).join('')}</div>`;
+    ${others.map(p => `<button class="chip" data-a="from" data-p="${p}" aria-pressed="${d.from === p}">Discard 放銃 · ${esc(pname(p))}</button>`).join('')}</div>`;
   const groups = r.groups.map(gr => {
     const rows = r.patterns.filter(p => p.group === gr.id).map(p => {
       const n = d.picks[p.id] || 0, ok = allowed(p, d);
-      const nm = `<span class="nm"><span class="zh">${p.zh}</span><small>${esc(p.en)}${ok ? '' : p.needs === 'self' ? ' · self-draw only' : ' · discard only'}</small></span>`;
+      const nm = `<span class="nm"><span class="zh">${p.zh}</span><small>${esc(p.en)}${ok ? '' : ' · ' + (p.id === 'tianhu' ? 'Dealer self-draw only 僅限莊家自摸' : p.id === 'dihu' ? 'Dealer’s first discard only 僅限莊家首張棄牌' : p.needs === 'self' ? 'Self-draw only 限自摸' : 'Discard only 限放銃')}</small></span>`;
       const main = p.max > 1
-        ? `<div class="pat-main ${n ? 'on' : ''}">${nm}<span class="fan">${p.fan}番</span><span class="step"><button data-a="dec" data-id="${p.id}" ${n ? '' : 'disabled'} aria-label="One fewer ${p.zh}">−</button><output aria-label="${p.zh} count">${n}</output><button data-a="inc" data-id="${p.id}" ${n < p.max ? '' : 'disabled'} aria-label="One more ${p.zh}">+</button></span></div>`
+        ? `<div class="pat-main ${n ? 'on' : ''}">${nm}<span class="fan">${fanLabel(p.fan)}</span><span class="step"><button data-a="dec" data-id="${p.id}" ${n ? '' : 'disabled'} aria-label="One fewer ${esc(p.en)} 減少${p.zh}">−</button><output aria-label="${esc(p.en)} count ${p.zh}數量">${n}</output><button data-a="inc" data-id="${p.id}" ${n < p.max ? '' : 'disabled'} aria-label="One more ${esc(p.en)} 增加${p.zh}">+</button></span></div>`
         : `<button class="pat-main" data-a="pick" data-id="${p.id}" aria-pressed="${!!n}" ${ok ? '' : 'disabled'}>${nm}<span class="fan">${fanLabel(p.fan)}</span></button>`;
-      return `<div class="pat">${main}<button class="info" data-a="info" data-id="${p.id}" aria-label="Explain ${p.zh}">i</button></div>`;
+      return `<div class="pat">${main}<button class="info" data-a="info" data-id="${p.id}" aria-label="Explain ${esc(p.en)} 查看${p.zh}說明">i</button></div>`;
     }).join('');
     return `<div class="sec-h"><span class="zh">${gr.zh}</span>${gr.en}</div><div class="pats">${rows}</div>`;
   }).join('');
@@ -747,21 +845,22 @@ function renderHand(keepScroll){
     const st = r.settle({fan:sc.fan, winner:d.winner, from:d.from === 'self' ? null : d.from, seats:g.seats}, o);
     pays = `<div class="pays num">${g.seats.filter(p => st.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(st.deltas[p])}">${signed(st.deltas[p])}</b></span>`).join('')}</div>`;
   }
-  if (!d.from) why = 'Choose how the hand was won.';
-  else if (!sc.ok) why = `Needs ${o.minFan} fan to win. This hand has ${sc.fan}.`;
-  const parts = sc.lines.map(l => l.zh + (l.n > 1 ? '×' + l.n : '')).concat(d.adj ? ['adjust ' + signed(d.adj)] : []);
+  if (!d.from) why = 'Choose self-draw or a discarder. 請選自摸或放銃者。';
+  else if (!sc.ok) why = `Minimum ${o.minFan} fan · 至少 ${o.minFan} 番才能和牌。`;
+  const parts = sc.lines.map(l => patternLineName(l.zh + (l.n > 1 ? '×' + l.n : ''), r)).concat(d.adj ? ['Adjustment 調整 ' + signed(d.adj)] : []);
   el.innerHTML = `
-    <div class="sheet-head"><h2 id="hs-title">${esc(pname(d.winner))} wins</h2><button data-a="cancelHand">Cancel</button></div>
+    <div class="sheet-head"><h2 id="hs-title">${esc(pname(d.winner))} wins 和牌</h2><button data-a="cancelHand">Cancel 取消</button></div>
+    <div class="sheet-tally">${tallyHTML()}</div>
     <div class="sheet-body"><div class="sheet-in">
-      <div class="sec-h">How did ${esc(pname(d.winner))} win?</div>${how}
+      <div class="sec-h">Winning tile 和牌來源</div>${how}
       ${groups}
-      <div class="adj"><span><b>House adjustment</b><br><span class="sub">Extra fan your table counts that is not listed.</span></span>
-        <span class="step"><button data-a="adj" data-n="-1" aria-label="One fan less">−</button><output>${signed(d.adj)}</output><button data-a="adj" data-n="1" aria-label="One fan more">+</button></span></div>
+      <div class="adj"><span><b>House adjustment 自訂加減番</b><br><span class="sub">Adjust fan by table agreement. 依本桌約定加番或減番。</span></span>
+        <span class="step"><button data-a="adj" data-n="-1" aria-label="One fan less 減一番">−</button><output>${signed(d.adj)}</output><button data-a="adj" data-n="1" aria-label="One fan more 加一番">+</button></span></div>
     </div></div>
     <div class="sheet-foot"><div class="in">
-      <div class="sum"><span class="big">${sc.limit ? '爆棚 ' : ''}${sc.fan}番</span><span class="why">${parts.length ? esc(parts.join(' + ')) : 'Nothing ticked yet'}${sc.capped ? ` · ${sc.raw} fan, capped at ${o.limitFan}` : ''}</span></div>
+      <div class="sum"><span class="big">${sc.limit ? 'Limit 爆棚 · ' : ''}${sc.fan} fan 番</span><span class="why">${parts.length ? esc(parts.join(' + ')) : 'No patterns selected · 尚未選擇番種'}${sc.capped ? ` · ${sc.raw} fan 番 · limit 封頂 ${o.limitFan}` : ''}</span></div>
       ${pays}${why ? `<div class="warn">${why}</div>` : ''}
-      <button class="btn primary" data-a="record" ${sc.ok ? '' : 'disabled'}>Record hand</button>
+      <button class="btn primary" data-a="record" ${sc.ok ? '' : 'disabled'}>Record hand 記錄本局</button>
     </div></div>`;
   el.hidden = false; sheetOpen = true;
   if (top) el.querySelector('.sheet-body').scrollTop = top;
@@ -771,16 +870,17 @@ function closeHand(){ $('handsheet').hidden = true; sheetOpen = false; }
 /* ============================ seat sheet ============================ */
 function renderSeats(){
   const r = R(), el = $('seatsheet'), g = game();
-  const sel = i => `<div class="seatpick"><span class="zh" aria-hidden="true">${r.winds[i].zh}</span><div class="field"><label for="seat-${i}">${r.winds[i].en}${i === 0 ? ' (first dealer)' : ''}</label>
+  const sel = i => `<div class="seatpick"><span class="zh" aria-hidden="true">${r.winds[i].zh}</span><div class="field"><label for="seat-${i}">${r.winds[i].en} ${r.winds[i].zh}家${i === 0 ? ' · First dealer 起莊' : ''}</label>
     <select id="seat-${i}" data-seat="${i}">${active().map(p => `<option value="${p.id}" ${seatDraft[i] === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>`;
   el.innerHTML = `
-    <div class="sheet-head"><h2 id="ss-title">Who sits where</h2><button data-a="closeSeats">Cancel</button></div>
+    <div class="sheet-head"><h2 id="ss-title">Choose seats 安排座位</h2><button data-a="closeSeats">Cancel 取消</button></div>
+    <div class="sheet-tally">${tallyHTML()}</div>
     <div class="sheet-body"><div class="sheet-in">
-      <p class="sub">${g.hands.length ? 'This starts a new game. Scores from earlier games stay in the standings.' : 'No hands recorded in this game yet, so this just changes its seats.'} Picking someone who is already seated swaps the two.</p>
+      <p class="sub">${g.hands.length ? 'A new game will start. Earlier scores stay in the standings. 即將開始新場次，先前分數會保留在排名中。' : 'Choose the seats for this game. 請安排本場座位。'} Choose a seated player to swap seats. 選擇已入座的人即可交換座位。</p>
       ${[0,1,2,3].map(sel).join('')}
-      <div class="row"><button class="btn grow" data-a="shuffleSeats">Shuffle these four</button>${active().length > 4 ? '<button class="btn grow" data-a="randomFour">Pick four at random</button>' : ''}</div>
+      <div class="row"><button class="btn grow" data-a="shuffleSeats">Shuffle seats 隨機換位</button>${active().length > 4 ? '<button class="btn grow" data-a="randomFour">Draw four 隨機選四人</button>' : ''}</div>
     </div></div>
-    <div class="sheet-foot"><div class="in"><button class="btn primary" data-a="startGame">${g.hands.length ? 'Start new game' : 'Set seats'}</button></div></div>`;
+    <div class="sheet-foot"><div class="in"><button class="btn primary" data-a="startGame">${g.hands.length ? 'Start game 開新場' : 'Set seats 確認座位'}</button></div></div>`;
   el.hidden = false;
 }
 function shuffle(a){ for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -788,20 +888,22 @@ function shuffle(a){ for (let i = a.length - 1; i > 0; i--) { const j = Math.flo
 /* ============================ toast + dialog ============================ */
 function toast(msg, undo){
   const t = $('toast');
-  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button data-a="undoNow">Undo</button>' : ''}`;
+  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button data-a="undoNow">Undo 撤銷</button>' : ''}`;
   t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 6000);
 }
 function ask(msg, yes, fn){
   dlgYes = fn;
-  $('dlg').innerHTML = `<div class="box"><p>${esc(msg)}</p><div class="row"><button class="btn grow" data-a="dlgNo">Keep it</button><button class="btn danger grow" data-a="dlgYes">${esc(yes)}</button></div></div>`;
+  $('dlg').innerHTML = `<div class="box"><p>${esc(msg)}</p><div class="row"><button class="btn grow" data-a="dlgNo">Cancel 取消</button><button class="btn danger grow" data-a="dlgYes">${esc(yes)}</button></div></div>`;
   $('dlg').hidden = false;
 }
 function undoLast(){ const g = game(); if (g.hands.length) { g.hands.pop(); save(); render(); } }
 
 /* ============================ actions ============================ */
 const A = {
+  createLiveTable(){ liveTable.create(); },
+  copyTableLink(){ liveTable.copyLink(); },
   lbSort(b){ lbSort = b.dataset.k; render(); },
-  shareNow(){ save(); toast('Shared. Everyone with the page now sees these scores.'); },
+  shareNow(){ save(); toast('Sharing scores… 正在共享分數…'); },
   win(b){ draft = {winner:b.dataset.p, from:null, picks:{}, adj:0}; renderHand(false); render(); },
   resumeHand(){ renderHand(false); render(); },
   cancelHand(){ draft = null; closeHand(); render(); },
@@ -812,7 +914,10 @@ const A = {
   },
   pick(b){
     const id = b.dataset.id;
-    if (draft.picks[id]) delete draft.picks[id];
+    if (draft.picks[id]) {
+      delete draft.picks[id];
+      R().patterns.forEach(p => { if ((p.implies || []).includes(id)) delete draft.picks[p.id]; });
+    }
     else { conflicts(id).forEach(x => delete draft.picks[x]); draft.picks[id] = 1; (pat(id).implies || []).forEach(x => { conflicts(x).forEach(y => { if (y !== id) delete draft.picks[y]; }); draft.picks[x] = 1; }); }
     renderHand(true);
   },
@@ -827,7 +932,7 @@ const A = {
     const st = r.settle({fan:sc.fan, winner:draft.winner, from, seats:g.seats}, o);
     g.hands.push({kind:'win', winner:draft.winner, from, picks:{...draft.picks}, adj:draft.adj, fan:sc.fan, limit:sc.limit, base:st.base,
       deltas:st.deltas, round:ts.round, dealer:g.seats[ts.dealer], lines:sc.lines.map(l => l.zh + (l.n > 1 ? '×' + l.n : ''))});
-    const msg = `${pname(draft.winner)} +${st.deltas[draft.winner]} (${sc.fan}番)`;
+    const msg = `${pname(draft.winner)} +${st.deltas[draft.winner]} (${sc.fan} fan 番)`;
     draft = null; closeHand(); save();
     if (currentView() !== 'table') location.hash = '#table'; else render();
     window.scrollTo(0, 0); toast(msg, true);
@@ -835,14 +940,14 @@ const A = {
   drawHand(){
     const g = game(), ts = tableState(g), deltas = {}; g.seats.forEach(p => deltas[p] = 0);
     g.hands.push({kind:'draw', deltas, round:ts.round, dealer:g.seats[ts.dealer], lines:[]});
-    save(); render(); toast('Hand recorded as a draw (流局). Dealer stays.', true);
+    save(); render(); toast('Draw recorded. Dealer stays. 已記錄流局，莊家連莊。', true);
   },
   undoNow(){ $('toast').hidden = true; undoLast(); },
-  undoAsk(){ ask('Remove the last recorded hand of this game?', 'Remove hand', undoLast); },
+  undoAsk(){ ask('Undo the last hand and its points? 撤銷上一局並還原分數？', 'Undo 撤銷', undoLast); },
   dlgNo(){ $('dlg').hidden = true; dlgYes = null; },
   dlgYes(){ $('dlg').hidden = true; const f = dlgYes; dlgYes = null; if (f) f(); },
   openSeats(){
-    if (active().length < 4) { toast('Add at least four players first.'); return; }
+    if (active().length < 4) { toast('Add at least four players. 請先加入至少四位玩家。'); return; }
     const ok = game().seats.filter(p => player(p) && !player(p).gone);
     const rest = active().map(p => p.id).filter(p => !ok.includes(p));
     seatDraft = ok.concat(rest).slice(0, 4); renderSeats();
@@ -865,31 +970,32 @@ const A = {
   },
   removePlayer(b){
     const id = b.dataset.p, g = game();
-    if (g.seats.includes(id)) { toast(pname(id) + ' is seated in the current game. Change seats first.'); return; }
+    if (g.seats.includes(id)) { toast(pname(id) + ' is seated. Change seats first. 該玩家已入座，請先換座。'); return; }
     const used = state.games.some(x => x.seats.includes(id) && x.hands.length);
     if (used) player(id).gone = true; else state.players = state.players.filter(p => p.id !== id);
     save(); render();
   },
   copy(){
     const tot = allTotals(), ids = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
-    const text = ['Mahjong scores (' + R().label + ')'].concat(ids.map(p => pname(p) + '  ' + signed(tot[p]) + (state.money > 0 ? '  ' + cashSigned(tot[p]) : '')), ['', 'Settle up:'],
-      settleUp(tot).map(x => `${pname(x.from)} pays ${pname(x.to)} ${state.money > 0 ? cash(x.n) : x.n}`)).join('\n');
-    try { navigator.clipboard.writeText(text).then(() => toast('Scores copied.'), () => toast('Copying is blocked here. Take a screenshot instead.')); }
-    catch(e){ toast('Copying is blocked here. Take a screenshot instead.'); }
+    const text = ['Mahjong scores 麻將分數 (' + R().label + ')'].concat(ids.map(p => pname(p) + '  ' + signed(tot[p]) + (state.money > 0 ? '  ' + cashSigned(tot[p]) : '')), ['', 'Settle up 結算'],
+      settleUp(tot).map(x => `${pname(x.from)} pays 付給 ${pname(x.to)} ${state.money > 0 ? cash(x.n) : x.n + ' pts 分'}`)).join('\n');
+    try { navigator.clipboard.writeText(text).then(() => toast('Copied · 已複製分數'), () => toast('Copy unavailable. Take a screenshot. 無法複製，請截圖保存。')); }
+    catch(e){ toast('Copy unavailable. Take a screenshot. 無法複製，請截圖保存。'); }
   },
-  resetAsk(){ ask('Clear every game and score? Players and rules stay.', 'Clear scores', () => {
-    state.games = [{id:1, seats:game().seats.slice(), hands:[]}]; draft = null; save(); render(); toast('Scores cleared.'); }); }
+  resetAsk(){ ask('Clear all games and scores? This keeps the players and rules. 清除所有對局和分數？玩家和規則將保留。', 'Clear scores 清除分數', () => {
+    state.games = [{id:1, seats:game().seats.slice(), hands:[]}]; draft = null; save(); render(); toast('Scores cleared · 已清除分數'); }); }
 };
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]');
   if (!b || b.disabled || !A[b.dataset.a]) return;
-  if (ro() && !RO_OK.has(b.dataset.a)) { toast('Only the scorekeeper can change scores.'); return; }
+  if (liveTable.locked && !ro() && !RO_OK.has(b.dataset.a)) { toast(liveTable.status()); return; }
+  if (ro() && !RO_OK.has(b.dataset.a)) { toast('Only the scorekeeper can edit. 只有記分員可修改。'); return; }
   A[b.dataset.a](b);
 });
 document.addEventListener('change', e => {
   const t = e.target;
-  if (ro()) { render(); return; }
+  if (ro() || liveTable.locked) { render(); return; }
   if (t.classList.contains('pname')) {
     const p = player(t.dataset.p), v = t.value.trim();
     if (p && v) { p.name = v; state.example = false; save(); render(); } else if (p) t.value = p.name;
@@ -906,14 +1012,14 @@ document.addEventListener('change', e => {
     seatDraft[i] = t.value; renderSeats();
   }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'newname') A.addPlayer(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'newname' && !ro() && !liveTable.locked) A.addPlayer(); });
 window.addEventListener('hashchange', () => { const keep = focusRule; render(); if (!keep) window.scrollTo(0, 0); });
 
 function start(data){
-  state = data && data.state ? fixState(data.state) : load();
+  state = liveTable.active ? fixState(liveTable.restore()) : data && data.state ? fixState(data.state) : load();
   draft = data && data.draft ? data.draft : null;
   render();
-  connect();
+  if (liveTable.active) liveTable.start(); else connect();
 }
 const hot = window.claude && window.claude.hot;
 if (hot && hot.snapshot) hot.snapshot(() => ({state, draft}));

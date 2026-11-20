@@ -263,32 +263,34 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
 @media(max-width:400px){.wrap{padding-left:10px;padding-right:10px}.tally{padding-left:9px;padding-right:9px}.felt{gap:12px 5px;padding-left:9px;padding-right:9px}.tally-title{font-size:.73rem}}
 @media(max-height:550px) and (orientation:landscape){.sheet-tally{padding:2px 8px}.sheet-tally .balances>div{flex-direction:row;gap:6px}.sheet-foot .in{gap:2px}.sheet-head,.sheet-foot{padding:4px 10px}.sheet-foot .why{display:none}}
 </style>
+<link rel="stylesheet" href="table.css">
+<link rel="stylesheet" href="pattern-picker.css">
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <h1><span class="brand-tile" aria-hidden="true"><i></i><i></i><i></i></span><span>Mahjong Score Table<small lang="zh-Hant">麻將記分桌</small></span></h1>
-    <span class="rule" id="ruleline"></span>
-    <div class="connection"><span class="sync" id="syncline" role="status"></span><span id="share-action"></span></div>
-  </header>
-  <div id="tally" class="tally"></div>
-  <div id="resume"></div>
-  <main id="view"></main>
-</div>
-
-<nav class="nav" aria-label="Sections 頁面"><div class="in">
+<header class="top masthead">
+  <h1><span class="brand-tile" aria-hidden="true"><i></i><i></i><i></i></span><span>Mahjong<small lang="zh-Hant">麻將記分桌</small></span></h1>
+  <nav class="nav" aria-label="Sections 頁面"><div class="in">
   <a href="#table" data-tab="table"><span class="zh" lang="zh-Hant">牌桌</span>Table</a>
   <a href="#leaderboard" data-tab="leaderboard"><span class="zh" lang="zh-Hant">排名</span>Leaders</a>
   <a href="#history" data-tab="history"><span class="zh" lang="zh-Hant">紀錄</span>History</a>
   <a href="#rules" data-tab="rules"><span class="zh" lang="zh-Hant">規則</span>Rules</a>
   <a href="#setup" data-tab="setup"><span class="zh" lang="zh-Hant">設定</span>Setup</a>
 </div></nav>
+  <div class="connection"><span class="sync" id="syncline" role="status"></span><span id="share-action"></span></div>
+</header>
+<div class="wrap">
+  <span class="rule" id="ruleline"></span>
+  <div id="tally" class="tally"></div>
+  <div id="resume"></div>
+  <main id="view"></main>
+</div>
 
 <div class="sheet" id="handsheet" hidden role="dialog" aria-modal="true" aria-labelledby="hs-title"></div>
 <div class="sheet" id="seatsheet" hidden role="dialog" aria-modal="true" aria-labelledby="ss-title"></div>
 <div class="toast" id="toast" hidden role="status"></div>
 <div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div>
 
+<script src="pattern-picker.js"></script>
 <script src="rules-guide.js"></script>
 <script src="live-table.js"></script>
 <script>
@@ -463,7 +465,7 @@ function save(){ if (liveTable.active) { liveTable.saveChange(); return; } keep(
 const sync = {hosted:!!(window.claude && window.claude.use), mode:'local', canWrite:null, exists:false, slow:false, lost:false, shown:null, last:null};
 let ref = null, writing = false, dirty = false, slowTimer = null;
 const ro = () => liveTable.viewer || (sync.mode === 'live' && sync.canWrite === false);
-const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink']);
+const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink','tableFocus']);
 function refresh(){ render(); if (sheetOpen && draft) renderHand(true); }
 function adopt(d){
   sync.shown = d.stamp;
@@ -630,11 +632,16 @@ function renderTally(){
 }
 function renderSharing(){
   const canCreate = !liveTable.active && !sync.hosted;
-  $('share-action').innerHTML = liveTable.shareable ? '<button class="share" data-a="copyTableLink">Copy table link · 複製觀戰連結</button>'
-    : canCreate ? '<button class="share" data-a="createLiveTable">Share live table · 共享牌桌</button>' : '';
+  $('share-action').innerHTML = liveTable.shareable ? '<button class="share" data-a="copyTableLink">Copy link · 複製連結</button>'
+    : canCreate ? '<button class="share" data-a="createLiveTable">Share table · 共享牌桌</button>' : '';
 }
 function render(){
   const v = currentView(), r = R(), o = O();
+  if (v !== 'table' && document.body.classList.contains('table-focus')) {
+    document.body.classList.remove('table-focus');
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  }
+  document.body.classList.toggle('table-page', v === 'table');
   document.querySelectorAll('.nav a').forEach(a => a.dataset.tab === v ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
   $('ruleline').textContent = `${r.label} · ${o.minFan} fan minimum 起和 · ${o.limitFan} fan limit 封頂`;
   const sl = syncLine(); $('syncline').className = 'sync ' + sl[0]; $('syncline').textContent = sl[1];
@@ -653,34 +660,54 @@ function render(){
 }
 
 function viewTable(){
-  const r = R(), g = game(), ts = tableState(g), gt = gameTotals(g), tot = allTotals();
+  const r = R(), g = game(), ts = tableState(g), tot = allTotals();
+  const gamePoints = gameTotals(g);
+  const scores = g.seats.map(pid => tot[pid] || 0);
+  const lowest = Math.min(...scores), highest = Math.max(...scores);
   const seats = g.seats.map((pid, i) => {
     const w = r.winds[(i - ts.dealer + 4) % 4];
-    return `<button class="seat pos-${i}" data-a="win" data-p="${pid}" aria-label="${esc(pname(pid))}, ${w.en} seat ${w.zh}家, ${signed(gt[pid])} points 分. Record win 記錄和牌。">
-      ${i === ts.dealer ? '<span class="zhuang" title="Dealer 莊家">莊</span>' : ''}
-      <span class="wind">${w.zh} <small>${w.en}</small></span><span class="who">${esc(pname(pid))}</span><span class="pts ${cls(gt[pid])}">${signed(gt[pid])} <small>this game 本場</small></span></button>`;
+    const points = scores[i], rank = 1 + scores.filter(score => score > points).length;
+    const last = points === lowest && lowest < highest;
+    const dealer = i === ts.dealer;
+    const wall = (i === 0 || i === 2) ? '<span class="wall-strip" aria-hidden="true">' + '<i></i>'.repeat(13) + '</span>' : '';
+    const label = `${pname(pid)}, ${w.en} ${w.zh}家, rank ${rank} 第${rank}名, ${signed(points)} total points 總分${last ? ', last place 末位' : ''}${dealer ? ', Dealer 莊家' : ''}`;
+    return `<button class="seat pos-${i}${dealer ? ' dealer' : ''}" data-a="win" data-p="${pid}" ${ro() ? 'disabled' : ''} aria-label="${esc(label)}">
+      ${wall}<span class="rank-pin ${last ? 'trailing' : points === highest && highest > lowest ? 'leading' : ''}" title="Table rank · 本桌總分排名"><span>#${rank}</span>${last ? '<span class="poop" aria-hidden="true">💩</span>' : ''}</span>
+      <span class="wind-tile"><b lang="zh-Hant">${w.zh}</b><small>${w.en}</small></span>
+      <span class="seat-details"><span class="who">${esc(pname(pid))}</span><span class="pts ${cls(points)}">${signed(points)} <small>total 總分</small></span>
+        ${state.games.length > 1 ? `<small class="game-points">${signed(gamePoints[pid])} this game 本場</small>` : ''}</span>
+      ${dealer ? '<span class="dealer-tab">Dealer 莊</span>' : ''}
+    </button>`;
   }).join('');
-  const nHands = state.games.reduce((n, x) => n + x.hands.length, 0);
-  const top = Object.keys(tot).sort((x, y) => tot[y] - tot[x])[0];
   const rw = r.winds[ts.round];
+  const rack = (position, tiles) => `<div aria-hidden="true" class="corner-rack ${position}">${tiles.map(mahjongTileFace).join('')}</div>`;
+  const focus = document.body.classList.contains('table-focus');
   return `
     ${sync.mode === 'live' && !sync.exists ? (ro()
-      ? '<p class="note">Showing an example until the scorekeeper shares the table. 記分員尚未共享分數，以下為示例。</p>'
-      : '<div class="resume"><span>Scores are on this device. 分數僅存在此裝置。</span><button data-a="shareNow">Share 共享</button></div>') : ''}
-    ${ro() && sync.exists ? '<p class="note">Watching live. The scorekeeper records each hand. 分數即時更新，由記分員登記。</p>' : ''}
-    ${state.example ? '<p class="note eo">Change names and choose seats in Setup. 到「設定」修改姓名、安排座位。</p>' : ''}
-    <div class="status"><span><b>Game ${state.games.length} · 第 ${state.games.length} 場</b></span><span>Round 圈風 <b>${rw.zh} ${rw.en}</b></span><span>Dealer 莊家 <b>${esc(pname(g.seats[ts.dealer]))}</b></span></div>
-    <div class="felt">${seats}
-      <div class="centre"><span class="round">${rw.zh}圈</span><span class="hand">Hand ${ts.handNo} · 第 ${ts.handNo} 局</span><button class="eo" data-a="drawHand">流局 Draw</button></div>
-    </div>
-    <p class="hint eo">Tap the winner to score. 點選和牌者記分。</p>
-    <div class="row eo">
-      <button class="btn grow" data-a="openSeats">Choose seats 換座開桌</button>
-      <button class="btn" data-a="undoAsk" ${g.hands.length ? '' : 'disabled'}>Undo last hand 撤銷上一局</button>
-    </div>
-    <a class="card leadlink" href="#leaderboard"><span class="who">${nHands && tot[top] > 0
-      ? `<span class="sub">Leader after ${nHands} hand${nHands > 1 ? 's' : ''} · ${nHands} 局後領先</span><span><b>${esc(pname(top))}</b> <b class="amt up">${signed(tot[top])}</b></span>`
-      : '<span class="sub">All square · 目前平手</span>'}</span><span class="go">Standings 排名</span></a>`;
+      ? '<p class="note">Waiting for shared scores · 等待共享分數</p>'
+      : '<div class="resume"><span>Saved on this device · 分數儲存在此裝置</span><button data-a="shareNow">Share 共享</button></div>') : ''}
+    <section class="table-stage" aria-label="Mahjong table 麻將桌">
+      <div class="felt">
+        <div class="table-line" aria-hidden="true">${'<i></i>'.repeat(4)}</div>
+        <div class="board-caption"><b>Game ${String(state.games.length).padStart(2,'0')}</b><span>第 ${state.games.length} 場</span></div>
+        <button class="expand-table" data-a="tableFocus" aria-pressed="${focus}" title="${focus ? 'Exit full screen · 離開全螢幕' : 'Full screen · 全螢幕'}" aria-label="${focus ? 'Exit full screen · 離開全螢幕' : 'Full screen · 全螢幕'}"><i aria-hidden="true"></i></button>
+        ${rack('rack-one',['1p','2p','3p'])}${rack('rack-two',['C','F','P'])}
+        <div class="seat-ring">${seats}
+          <div class="centre"><div class="round-dial"><div class="dial-face">
+            <span class="round" lang="zh-Hant">${rw.zh}</span><b>${rw.en} round</b><small>圈風</small>
+          </div></div><span class="hand">Hand ${ts.handNo} · 第 ${ts.handNo} 局</span></div>
+        </div>
+        <div class="board-hint">${ro() ? 'Watching · 觀戰中' : 'Tap a winner · 點選和牌者'}</div>
+      </div>
+    </section>
+    <div class="table-controls">
+      <span class="table-rule"><b>Hong Kong <span lang="zh-Hant">香港</span></b><span>${O().minFan} fan minimum 起和 · ${O().limitFan} fan cap 封頂</span></span>
+      <div class="table-buttons eo">
+        <button class="btn" data-a="openSeats">Seats <span>座位</span></button>
+        <button class="btn" data-a="drawHand">Draw <span>流局</span></button>
+        <button class="btn" data-a="undoAsk" ${g.hands.length ? '' : 'disabled'}>Undo <span>撤銷</span></button>
+      </div>
+    </div>`;
 }
 
 /* ============================ leaderboard ============================ */
@@ -823,23 +850,14 @@ function viewSetup(){
 /* ============================ hand sheet ============================ */
 function renderHand(keepScroll){
   const el = $('handsheet'), r = R(), o = O(), g = game(), d = draft;
+  const focused = el.contains(document.activeElement) ? document.activeElement.dataset : null;
   const old = el.querySelector('.sheet-body'), top = keepScroll && old ? old.scrollTop : 0;
   const sc = scoreDraft(d);
   const others = g.seats.filter(p => p !== d.winner);
-  const how = `<div class="chips">
-    <button class="chip" data-a="from" data-p="self" aria-pressed="${d.from === 'self'}"><span class="zh">自摸</span> Self-draw</button>
-    ${others.map(p => `<button class="chip" data-a="from" data-p="${p}" aria-pressed="${d.from === p}">Discard 放銃 · ${esc(pname(p))}</button>`).join('')}</div>`;
-  const groups = r.groups.map(gr => {
-    const rows = r.patterns.filter(p => p.group === gr.id).map(p => {
-      const n = d.picks[p.id] || 0, ok = allowed(p, d);
-      const nm = `<span class="nm"><span class="zh">${p.zh}</span><small>${esc(p.en)}${ok ? '' : ' · ' + (p.id === 'tianhu' ? 'Dealer self-draw only 僅限莊家自摸' : p.id === 'dihu' ? 'Dealer’s first discard only 僅限莊家首張棄牌' : p.needs === 'self' ? 'Self-draw only 限自摸' : 'Discard only 限放銃')}</small></span>`;
-      const main = p.max > 1
-        ? `<div class="pat-main ${n ? 'on' : ''}">${nm}<span class="fan">${fanLabel(p.fan)}</span><span class="step"><button data-a="dec" data-id="${p.id}" ${n ? '' : 'disabled'} aria-label="One fewer ${esc(p.en)} 減少${p.zh}">−</button><output aria-label="${esc(p.en)} count ${p.zh}數量">${n}</output><button data-a="inc" data-id="${p.id}" ${n < p.max ? '' : 'disabled'} aria-label="One more ${esc(p.en)} 增加${p.zh}">+</button></span></div>`
-        : `<button class="pat-main" data-a="pick" data-id="${p.id}" aria-pressed="${!!n}" ${ok ? '' : 'disabled'}>${nm}<span class="fan">${fanLabel(p.fan)}</span></button>`;
-      return `<div class="pat">${main}<button class="info" data-a="info" data-id="${p.id}" aria-label="Explain ${esc(p.en)} 查看${p.zh}說明">i</button></div>`;
-    }).join('');
-    return `<div class="sec-h"><span class="zh">${gr.zh}</span>${gr.en}</div><div class="pats">${rows}</div>`;
-  }).join('');
+  const how = `<div class="pc-methods" role="group" aria-label="Winning tile 和牌來源">
+    <button class="chip" data-a="from" data-p="self" aria-pressed="${d.from === 'self'}">Self-draw <span lang="zh-Hant">自摸</span></button>
+    ${others.map(p => `<button class="chip" data-a="from" data-p="${p}" aria-pressed="${d.from === p}"><span class="pc-discard">Discard 放銃</span><strong>${esc(pname(p))}</strong></button>`).join('')}</div>`;
+  const groups = patternPickerHTML(r, d);
   let pays = '', why = '';
   if (d.from) {
     const st = r.settle({fan:sc.fan, winner:d.winner, from:d.from === 'self' ? null : d.from, seats:g.seats}, o);
@@ -852,7 +870,7 @@ function renderHand(keepScroll){
     <div class="sheet-head"><h2 id="hs-title">${esc(pname(d.winner))} wins 和牌</h2><button data-a="cancelHand">Cancel 取消</button></div>
     <div class="sheet-tally">${tallyHTML()}</div>
     <div class="sheet-body"><div class="sheet-in">
-      <div class="sec-h">Winning tile 和牌來源</div>${how}
+      <div class="pc-method"><div class="sec-h">Winning tile 和牌來源</div>${how}</div>
       ${groups}
       <div class="adj"><span><b>House adjustment 自訂加減番</b><br><span class="sub">Adjust fan by table agreement. 依本桌約定加番或減番。</span></span>
         <span class="step"><button data-a="adj" data-n="-1" aria-label="One fan less 減一番">−</button><output>${signed(d.adj)}</output><button data-a="adj" data-n="1" aria-label="One fan more 加一番">+</button></span></div>
@@ -864,6 +882,11 @@ function renderHand(keepScroll){
     </div></div>`;
   el.hidden = false; sheetOpen = true;
   if (top) el.querySelector('.sheet-body').scrollTop = top;
+  if (keepScroll && focused && focused.a) {
+    const target = Array.from(el.querySelectorAll('[data-a]')).find(b =>
+      b.dataset.a === focused.a && b.dataset.id === focused.id && b.dataset.p === focused.p && b.dataset.n === focused.n);
+    if (target && !target.disabled) target.focus({preventScroll:true});
+  }
 }
 function closeHand(){ $('handsheet').hidden = true; sheetOpen = false; }
 
@@ -899,13 +922,44 @@ function ask(msg, yes, fn){
 function undoLast(){ const g = game(); if (g.hands.length) { g.hands.pop(); save(); render(); } }
 
 /* ============================ actions ============================ */
+// Browsers without document fullscreen still get the expanded table layout.
+let nativeTableFocus = false;
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.fullscreenElement && document.body.classList.contains('table-focus')) {
+    document.body.classList.remove('table-focus');
+    render();
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  if (nativeTableFocus && !document.fullscreenElement) {
+    nativeTableFocus = false;
+    document.body.classList.remove('table-focus');
+    render();
+  }
+});
 const A = {
+  async tableFocus(){
+    const enter = document.body.classList.toggle('table-focus');
+    render();
+    try {
+      if (enter && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+        nativeTableFocus = !!document.fullscreenElement;
+      } else if (!enter && document.fullscreenElement) await document.exitFullscreen();
+    } catch { nativeTableFocus = false; }
+    if (enter) window.scrollTo(0, 0);
+  },
   createLiveTable(){ liveTable.create(); },
   copyTableLink(){ liveTable.copyLink(); },
   lbSort(b){ lbSort = b.dataset.k; render(); },
   shareNow(){ save(); toast('Sharing scores… 正在共享分數…'); },
   win(b){ draft = {winner:b.dataset.p, from:null, picks:{}, adj:0}; renderHand(false); render(); },
-  resumeHand(){ renderHand(false); render(); },
+  pickerGroup(b){ draft.pickerGroup = b.dataset.id; renderHand(true); },
+  resumeHand(){
+    renderHand(false); render();
+    const ruleButton = Array.from($('handsheet').querySelectorAll('[data-a="info"]')).find(b => b.dataset.id === draft.lastRule);
+    if (ruleButton) { ruleButton.scrollIntoView({block:'center'}); ruleButton.focus({preventScroll:true}); }
+  },
   cancelHand(){ draft = null; closeHand(); render(); },
   from(b){
     draft.from = b.dataset.p;
@@ -924,7 +978,7 @@ const A = {
   inc(b){ const id = b.dataset.id, p = pat(id); conflicts(id).forEach(x => delete draft.picks[x]); draft.picks[id] = Math.min(p.max, (draft.picks[id] || 0) + 1); renderHand(true); },
   dec(b){ const id = b.dataset.id; const n = (draft.picks[id] || 0) - 1; if (n > 0) draft.picks[id] = n; else delete draft.picks[id]; renderHand(true); },
   adj(b){ draft.adj = Math.max(-9, Math.min(13, draft.adj + Number(b.dataset.n))); renderHand(true); },
-  info(b){ focusRule = b.dataset.id; closeHand(); if (currentView() === 'rules') render(); else location.hash = '#rules'; },
+  info(b){ draft.lastRule = focusRule = b.dataset.id; closeHand(); if (currentView() === 'rules') render(); else location.hash = '#rules'; },
   record(){
     const r = R(), o = O(), g = game(), ts = tableState(g), sc = scoreDraft(draft);
     if (!sc.ok) return;

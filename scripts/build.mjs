@@ -2,7 +2,7 @@
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 
 const assets = {};
-for (const name of ['index.html', 'rules-guide.js', 'live-table.js']) {
+for (const name of ['index.html', 'rules-guide.js', 'live-table.js', 'table.css', 'pattern-picker.js', 'pattern-picker.css']) {
   assets[name] = await readFile(new URL('../' + name, import.meta.url), 'utf8');
 }
 const worker = await readFile(new URL('../worker.mjs', import.meta.url), 'utf8');

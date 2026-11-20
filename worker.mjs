@@ -62,8 +62,9 @@ export default {
     }
     const name = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
     if (!Object.hasOwn(ASSETS, name)) return new Response('Not found', {status:404});
+    const type = {html:'text/html', js:'application/javascript', css:'text/css'}[name.split('.').pop()];
     return new Response(ASSETS[name], {headers:{
-      'Content-Type':name.endsWith('.html') ? 'text/html; charset=utf-8' : 'application/javascript; charset=utf-8',
+      'Content-Type':type + '; charset=utf-8',
       'Cache-Control':'no-cache', 'Referrer-Policy':'no-referrer'
     }});
   }

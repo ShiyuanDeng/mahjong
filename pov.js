@@ -19,13 +19,14 @@ const mySeat = (() => {
   function ensure() {
     load();
     if (liveTable.active && !liveTable.available || sync.mode === 'connecting') return;
-    if (!profile || dialog().open) show();
+    if (!profile || (profile.pid && typeof profile.beginner !== 'boolean') || dialog().open) show();
   }
   function show() {
     const el = dialog(), form = el.querySelector('form'), opening = !el.open;
     const seats = game().seats, ts = tableState(game());
     if (opening) {
       form.elements.name.value = profile?.name || '';
+      form.elements.experience.value = typeof profile?.beginner === 'boolean' ? String(profile.beginner) : '';
       $('join-error').textContent = '';
       optionsKey = '';
     }
@@ -41,8 +42,14 @@ const mySeat = (() => {
         profile?.pid && seats.includes(profile.pid) ? profile.pid : seats.find(id => player(id).openSeat) || 'watch';
       optionsKey = options;
     }
-    el.querySelector('.arrival-close').hidden = !profile;
+    experienceField();
+    el.querySelector('.arrival-close').hidden = !profile || !!profile.pid && typeof profile.beginner !== 'boolean';
     if (opening) el.showModal();
+  }
+  function experienceField() {
+    const playing = $('arrival-seat').value !== 'watch';
+    $('arrival-experience').required = playing;
+    $('join-experience').hidden = !playing;
   }
   async function join(e) {
     e.preventDefault();
@@ -51,31 +58,33 @@ const mySeat = (() => {
     const err = $('join-error');
     if (!name) { err.textContent = 'Enter your name · 請輸入名字'; form.elements.name.focus(); return; }
     let pid = choice === 'watch' ? null : choice;
-    const selected = player(pid);
+    const selected = player(pid), experience = form.elements.experience.value;
+    if (pid && !['true','false'].includes(experience)) { form.elements.experience.focus(); return; }
+    const beginner = pid ? experience === 'true' : undefined;
     if (pid && (!selected || !game().seats.includes(pid))) { err.textContent = 'Seats changed. Choose again. · 座位已變更，請重新選擇。'; show(); return; }
     if (pid && !selected.openSeat && selected.name.toLocaleLowerCase() !== name.toLocaleLowerCase()) {
       err.textContent = 'Choose your named seat, an open seat, or Watch. · 請選自己的座位、空位或觀戰。';
       return;
     }
-    if (pid && selected.openSeat && liveTable.active && !liveTable.online) {
+    if (pid && (selected.openSeat || selected.beginner !== beginner) && liveTable.active && !liveTable.online) {
       err.textContent = 'Reconnect to take an open seat. · 請連線後入座。'; return;
     }
     sending = true;
     form.querySelector('[type=submit]').disabled = true;
     try {
-      if (pid && selected.openSeat) {
+      if (pid && (selected.openSeat || selected.beginner !== beginner)) {
         if (liveTable.active) {
-          await liveTable.claimSeat(pid, name);
+          await liveTable.claimSeat(pid, name, beginner);
         } else if (!ro()) {
-          selected.name = name; selected.openSeat = false; state.example = false; save();
+          selected.name = name; selected.openSeat = false; selected.beginner = beginner; state.example = false; save();
         }
       }
-      remember({name, pid}); dialog().close(); render();
+      remember({name, pid, beginner}); dialog().close(); render();
     } catch (error) {
       err.textContent = error.message === '409' ? 'That seat was taken. Choose another. · 已有人入座，請另選。' : 'Could not join. Try again. · 暫時無法入座，請再試。';
     } finally { sending = false; form.querySelector('[type=submit]').disabled = false; }
   }
-  return {ensure, show, bottom, join, remember, get profile(){ load(); return profile; }};
+  return {ensure, show, bottom, join, remember, experienceField, get profile(){ load(); return profile; }};
 })();
 
 function commandTile(glyph, en, zh, target, options = {}) {

@@ -93,3 +93,13 @@
 @media(max-width:760px){.hand-rack .command-tile{height:83px;flex:1 1 0}}
 @media(max-width:600px) and (max-height:690px){.hand-rack .command-tile{height:64px}.pov-seats .pos-2{top:32%}}
 @media(min-width:601px) and (max-height:570px){.hand-rack .command-tile{height:58px}.hand-rack .rack-bookend{--mj-tile-width:39px}.pov-seats .pos-2{top:30%}}
+#penalty-dialog {margin:auto;width:min(410px,calc(100vw - 24px));max-height:92dvh;overflow:auto;border:1px solid #b9a077;border-radius:12px;background:#faf4e5;color:#233e31;padding:0;box-shadow:0 14px 54px #121d136b}
+#penalty-dialog::backdrop {background:#10251d70}
+#penalty-dialog form {display:grid;gap:8px;padding:20px}
+#penalty-dialog h2 {font:bold 1.34rem Georgia,serif;margin:0 0 4px}
+#penalty-dialog label {font-weight:650}
+#penalty-dialog select {font:inherit;color:#283e32;background:#fffdf4;border:1px solid #afa389;padding:8px;border-radius:5px;min-width:0;width:100%}
+#penalty-dialog [hidden],#join-experience[hidden] {display:none}
+#penalty-preview:not(:empty) {margin:4px 0;border-block:1px solid #cabe9e;padding:9px 0}
+#penalty-preview .deltas {margin-top:5px}
+#penalty-dialog .row {justify-content:flex-end}

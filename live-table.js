@@ -119,9 +119,9 @@ const liveTable = (() => {
     }
     history.replaceState(null, '', link()); saveChange(); start(); redraw();
   }
-  async function claimSeat(pid, name) {
+  async function claimSeat(pid, name, beginner) {
     const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({pid, name}), signal:AbortSignal.timeout(10000)});
+      body:JSON.stringify({pid, name, beginner}), signal:AbortSignal.timeout(10000)});
     if (!res.ok) { await read(); throw new Error(String(res.status)); }
     await read();
   }

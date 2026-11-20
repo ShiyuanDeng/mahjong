@@ -301,6 +301,9 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
     <input id="arrival-name" name="name" required maxlength="24" autocomplete="given-name" placeholder="Name · 名字">
     <label for="arrival-seat">Your seat <span>你的座位</span></label>
     <select id="arrival-seat" name="seat"></select>
+    <div id="join-experience" class="field"><label for="arrival-experience">Are you a beginner? · 你是新手嗎？</label>
+    <select id="arrival-experience" name="experience" required><option value="">Choose · 請選擇</option><option value="true">Yes, beginner · 是，新手</option><option value="false">No · 否</option></select>
+    <small>Beginners get one free mistaken win call per table. 新手在本桌首次不夠番喊糊或詐糊可合計免罰一次。</small></div>
     <p id="join-error" role="status"></p><button type="submit">Join table · 加入牌桌</button>
   </form>
 </dialog>
@@ -315,6 +318,15 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
     <input id="chat-text" maxlength="500" required autocomplete="off" placeholder="Aa · 輸入訊息"><button type="submit" class="btn primary">Send · 傳送</button>
   </div></form>
 </dialog>
+<dialog id="penalty-dialog" aria-labelledby="penalty-title"><form>
+  <h2 id="penalty-title">Win-call penalty · 喊糊罰分</h2>
+  <label for="penalty-player">Who called the win? · 誰喊糊？</label><select id="penalty-player" required></select>
+  <label for="penalty-type">Reason · 原因</label><select id="penalty-type"><option value="short">Below minimum fan · 不夠番喊糊</option><option value="falseWin">Invalid winning hand · 詐糊</option></select>
+  <div id="penalty-experience" class="field"><label for="penalty-new">Is this player a beginner? · 這位玩家是新手嗎？</label><select id="penalty-new"><option value="">Choose · 請選擇</option><option value="true">Yes · 是</option><option value="false">No · 否</option></select></div>
+  <div id="penalty-preview" aria-live="polite"></div>
+  <div class="row"><button type="button" class="btn" id="penalty-cancel">Cancel · 取消</button><button type="submit" class="btn primary">Record · 記錄</button></div>
+</form></dialog>
+<script src="penalty.js"></script>
 <script src="chat.js"></script>
 <script src="pov.js"></script>
 <script src="pattern-picker.js"></script>
@@ -572,9 +584,10 @@ const cls = n => n > 0 ? 'up' : n < 0 ? 'down' : '';
 const pat = id => R().patterns.find(p => p.id === id);
 
 function tableState(g){
+  const completed = g.hands.filter(h => h.kind !== 'penalty');
   let d = 0, passes = 0;
-  for (const h of g.hands) if (!R().dealerStays(h, g.seats[d])) { d = (d + 1) % 4; passes++; }
-  return {dealer:d, round:Math.floor(passes / 4) % 4, handNo:g.hands.length + 1};
+  for (const h of completed) if (!R().dealerStays(h, g.seats[d])) { d = (d + 1) % 4; passes++; }
+  return {dealer:d, round:Math.floor(passes / 4) % 4, handNo:completed.length + 1};
 }
 function gameTotals(g){ const t = {}; g.seats.forEach(p => t[p] = 0); g.hands.forEach(h => { for (const p in h.deltas) t[p] = (t[p] || 0) + h.deltas[p]; }); return t; }
 function allTotals(){ const t = {}; state.games.forEach(g => { const gt = gameTotals(g); for (const p in gt) t[p] = (t[p] || 0) + gt[p]; }); return t; }
@@ -679,6 +692,7 @@ function render(){
   $('view').innerHTML = liveTable.active && !liveTable.available && v !== 'rules' ? '<p class="card">' + esc(liveTable.status()) + '</p>' : ({table:viewTable, leaderboard:viewLeaderboard, history:viewHistory, rules:viewRules, setup:viewSetup})[v]();
   renderTally();
   renderSharing();
+  if ($('penalty-dialog').open) penaltyDialog.refresh();
   if ($('table-chat').open) tableChat.refresh();
   mySeat.ensure();
   if (ro() || liveTable.locked) $('view').querySelectorAll('input,select').forEach(e => e.disabled = true);
@@ -725,7 +739,7 @@ function viewTable(){
       <div class="seat-ring pov-seats">${seats}</div>
       <div class="pov-centre"><span class="wind-counter"><b>${rw.zh}</b><small>${rw.en} round · 圈風</small></span>
         <span class="hand-counter">Hand ${ts.handNo} · 第 ${ts.handNo} 局</span></div>
-      <div class="score-tiles eo">${commandTile('流','Draw','流局','drawHand')}${commandTile('撤','Undo','撤銷','undoAsk',{disabled:!g.hands.length})}</div>
+      <div class="score-tiles eo">${commandTile('罰','Penalty','罰分','openPenalty',{tone:'ruby'})}${commandTile('流','Draw','流局','drawHand')}${commandTile('撤','Undo','撤銷','undoAsk',{disabled:!g.hands.length})}</div>
       <p class="pov-hint">${ro() ? 'Watching the table · 觀戰中' : 'Tap the winner · 點選和牌者'}</p>
       ${actionRack()}
     </section>`;
@@ -736,7 +750,7 @@ function playerStats(){
   const st = {}, mk = id => st[id] = st[id] || {id, pts:0, played:0, wins:0, zimo:0, dealin:0, best:0};
   active().forEach(p => mk(p.id));
   state.games.forEach(g => g.hands.forEach(h => {
-    g.seats.forEach(p => { const x = mk(p); x.played++; x.pts += h.deltas[p] || 0; });
+    g.seats.forEach(p => { const x = mk(p); if (h.kind !== 'penalty') x.played++; x.pts += h.deltas[p] || 0; });
     if (h.kind !== 'win') return;
     const w = mk(h.winner); w.wins++; if (!h.from) w.zimo++; if (h.fan > w.best) w.best = h.fan;
     if (h.from) mk(h.from).dealin++;
@@ -776,7 +790,7 @@ function patternLineName(line, rules){
   return pattern.en + ' ' + name + (count ? ' ×' + count : '');
 }
 function handRowHTML(h, n, r){
-  const head = h.kind === 'draw'
+  const head = h.kind === 'penalty' ? penaltyHistory(h) : h.kind === 'draw'
     ? `<span class="zh">流局</span><span>Draw, no winner</span>`
     : `<b>${esc(pname(h.winner))}</b><span>${h.from ? 'wins · 和牌 · Discarder 放銃者 ' + esc(pname(h.from)) : '自摸 self-draw'}</span><span class="fanpill ${h.limit ? 'limit' : ''}">${h.limit ? 'Limit 爆棚 · ' : ''}${Number(h.fan)} fan 番</span>`;
   const deltas = h.kind === 'draw' ? '' : `<div class="deltas num">${Object.keys(h.deltas).filter(p => h.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(h.deltas[p])}">${signed(h.deltas[p])}</b></span>`).join('')}</div>`;
@@ -788,12 +802,13 @@ function viewHistory(){
   const games = state.games.map((g, gi) => ({g, gi})).reverse().map(({g, gi}) => {
     const seatLine = g.seats.map((p, i) => `${r.winds[i].en} ${r.winds[i].zh} ${esc(pname(p))}`).join(' · ');
     const gt = gameTotals(g);
-    const hands = g.hands.map((h, i) => handRowHTML(h, i + 1, r)).reverse().join('');
+    let handNo = 1;
+    const hands = g.hands.map(h => handRowHTML(h, h.kind === 'penalty' ? handNo : handNo++, r)).reverse().join('');
     return `<section class="card"><h2>Game ${gi + 1} · 第 ${gi + 1} 場</h2><p class="sub">Starting seats 起始座位 · ${seatLine}</p>
       <div class="deltas num">${g.seats.map(p => `<span>${esc(pname(p))} <b class="amt ${cls(gt[p])}">${signed(gt[p])}</b></span>`).join('')}</div>
       ${hands || '<p class="sub">No hands recorded · 尚無對局紀錄</p>'}</section>`;
   }).join('');
-  return `${games}<div class="row eo"><button class="btn" data-a="undoAsk" ${game().hands.length ? '' : 'disabled'}>Undo last hand 撤銷上一局</button></div>`;
+  return `${games}<div class="row eo"><button class="btn" data-a="undoAsk" ${game().hands.length ? '' : 'disabled'}>Undo last entry 撤銷上筆紀錄</button></div>`;
 }
 
 function payRows(){
@@ -830,7 +845,8 @@ function viewRules(){
         <thead><tr><th rowspan="2">Fan<br>番</th><th colspan="2">Self-draw 自摸</th><th colspan="3">Discard 放銃</th></tr>
         <tr><th>Each pays<br>每家付</th><th>Win<br>共得</th><th>Discarder<br>銃家付</th><th>Each other<br>旁家付</th><th>Win<br>共得</th></tr></thead>
         <tbody>${payRows()}</tbody></table></div>
-    </section>${groups}`;
+    </section>
+    <section class="card"><h2>House penalties · 本桌罰則</h2>${penaltyRules()}</section>${groups}`;
 }
 
 function moneyExample(){
@@ -856,6 +872,7 @@ function viewSetup(){
       <div class="field"><label for="ruleset">Rule set 玩法</label>
         <select id="ruleset">${Object.values(RULESETS).map(x => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${x.label}</option>`).join('')}</select></div>
       ${opts}
+      ${penaltySettings()}
       <p class="sub">Changes apply from the next hand. 規則從下一局生效，已記分數維持原值。</p>
     </section>
     <section class="card"><h2>Stakes 金額</h2>
@@ -913,7 +930,7 @@ function renderHand(keepScroll){
   const old = el.querySelector('.sheet-body'), top = keepScroll && old ? old.scrollTop : 0;
   const sc = scoreDraft(d);
   let pays = '', why = '';
-  if (d.from) {
+  if (sc.ok) {
     const st = r.settle({fan:sc.fan, winner:d.winner, from:d.from === 'self' ? null : d.from, seats:g.seats}, o);
     pays = `<div class="pays num">${g.seats.filter(p => st.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(st.deltas[p])}">${signed(st.deltas[p])}</b></span>`).join('')}</div>`;
   }
@@ -927,7 +944,7 @@ function renderHand(keepScroll){
     <div class="sheet-foot"><div class="in">
       <div class="score-readout"><div class="sum"><span class="big">${sc.limit ? 'Limit 爆棚 · ' : ''}${sc.fan} fan 番</span><span class="why">${parts.length ? esc(parts.join(' + ')) : 'Select patterns · 選擇牌型'}${sc.capped ? ` · ${sc.raw} fan 番 · limit 封頂 ${o.limitFan}` : ''}</span></div>
       ${pays}${why ? `<div class="warn">${why}</div>` : ''}</div>
-      <button class="btn primary" data-a="record" ${sc.ok ? '' : 'disabled'}>Record hand 記錄本局</button>
+      ${d.from && !sc.ok ? '<button class="btn primary" data-a="openPenalty" data-reason="short">Under minimum · 不夠番喊糊</button>' : `<button class="btn primary" data-a="record" ${sc.ok ? '' : 'disabled'}>Record hand 記錄本局</button>`}
     </div></div>`;
   el.hidden = false; sheetOpen = true;
   if (opening) {
@@ -981,6 +998,7 @@ function undoLast(){ const g = game(); if (g.hands.length) { g.hands.pop(); save
 // Browsers without document fullscreen still get the expanded table layout.
 let nativeTableFocus = false;
 document.addEventListener('keydown', e => {
+  if ($('penalty-dialog').open) return;
   if (e.key === 'Escape' && sheetOpen) { A.cancelHand(); return; }
   if (e.key === 'Escape' && !document.fullscreenElement && document.body.classList.contains('table-focus')) {
     document.body.classList.remove('table-focus');
@@ -1007,6 +1025,7 @@ const A = {
     if (enter) window.scrollTo(0, 0);
   },
   myView(){ mySeat.show(); },
+  openPenalty(b){ penaltyDialog.open(b.dataset.reason); },
   openChat(){ tableChat.open(); },
   createLiveTable(){
     const profile = mySeat.profile;
@@ -1076,7 +1095,7 @@ const A = {
     save(); render(); toast('Draw recorded. Dealer stays. 已記錄流局，莊家連莊。', true);
   },
   undoNow(){ $('toast').hidden = true; undoLast(); },
-  undoAsk(){ ask('Undo the last hand and its points? 撤銷上一局並還原分數？', 'Undo 撤銷', undoLast); },
+  undoAsk(){ ask('Undo the last entry and its points? 撤銷上筆紀錄並還原分數？', 'Undo 撤銷', undoLast); },
   dlgNo(){ $('dlg').hidden = true; dlgYes = null; },
   dlgYes(){ $('dlg').hidden = true; const f = dlgYes; dlgYes = null; if (f) f(); },
   openSeats(){
@@ -1121,10 +1140,11 @@ const A = {
 
 $('arrival').querySelector('form').addEventListener('submit', mySeat.join);
 $('arrival').querySelector('.arrival-close').addEventListener('click', () => $('arrival').close());
-$('arrival').addEventListener('cancel', e => { if (!mySeat.profile) e.preventDefault(); });
+$('arrival').addEventListener('cancel', e => { if ($('arrival').querySelector('.arrival-close').hidden) e.preventDefault(); });
+$('arrival-seat').addEventListener('change', mySeat.experienceField);
 $('arrival-name').addEventListener('input', e => {
   const match = game().seats.find(id => !player(id).openSeat && pname(id).toLocaleLowerCase() === e.target.value.trim().toLocaleLowerCase());
-  if (match) $('arrival-seat').value = match;
+  if (match) { $('arrival-seat').value = match; mySeat.experienceField(); }
   $('join-error').textContent = '';
 });
 document.addEventListener('click', e => {
@@ -1140,6 +1160,8 @@ document.addEventListener('change', e => {
   if (t.classList.contains('pname')) {
     const p = player(t.dataset.p), v = t.value.trim();
     if (p && v) { p.name = v; p.openSeat = false; state.example = false; save(); render(); } else if (p) t.value = p.name;
+  } else if (t.dataset.fine) {
+    savePenaltySetting(t);
   } else if (t.dataset.opt) {
     const op = R().options.find(x => x.key === t.dataset.opt), c = op.choices.find(x => String(x[0]) === t.value);
     O()[op.key] = c[0]; save(); render();

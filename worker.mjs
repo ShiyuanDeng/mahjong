@@ -10,14 +10,19 @@ async function digest(value) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, '0')).join('');
 }
+function arrivalVersion(arrivals) {
+  // Older tables stored just a name, with one version increment per claimed seat.
+  return Object.values(arrivals).reduce((sum, entry) => sum + (entry.version || 1), 0);
+}
 function withArrivals(row) {
   const state = JSON.parse(row.snapshot), arrivals = JSON.parse(row.arrivals);
   for (const p of state.players) {
-    if (p.openSeat === true && Object.hasOwn(arrivals, p.id)) {
-      p.name = arrivals[p.id]; p.openSeat = false;
-    }
+    if (!Object.hasOwn(arrivals, p.id)) continue;
+    const entry = arrivals[p.id];
+    if (p.openSeat === true) { p.name = entry.name || entry; p.openSeat = false; }
+    if (typeof entry.beginner === 'boolean') p.beginner = entry.beginner;
   }
-  return {state, seatsVersion:Object.keys(arrivals).length};
+  return {state, seatsVersion:arrivalVersion(arrivals)};
 }
 // Claiming a name never edits a hand. Keep arrivals separate so an in-flight score save
 // cannot replace a guest's name or conflict with a spectator taking an empty chair.
@@ -25,15 +30,18 @@ async function joinSeat(request, db, id) {
   let body;
   try { body = await request.json(); } catch { return json({error:'Invalid name'}, 400); }
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
-  if (!name || name.length > 24 || typeof body.pid !== 'string') return json({error:'Invalid seat or name'}, 400);
+  if (!name || name.length > 24 || typeof body.pid !== 'string' || (body.beginner !== undefined && typeof body.beginner !== 'boolean')) return json({error:'Invalid seat or name'}, 400);
   for (let attempt = 0; attempt < 3; attempt++) {
     const row = await db.prepare('SELECT revision, snapshot, arrivals FROM score_tables WHERE id = ?').bind(id).first();
     if (!row) return json({error:'Table not found'}, 404);
     const {state} = withArrivals(row), g = state.games.at(-1);
     const p = state.players.find(p => p.id === body.pid);
     if (!p || !g.seats.includes(p.id)) return json({error:'Seats changed'}, 409);
-    if (p.openSeat !== true) return p.name === name ? json({pid:p.id}) : json({error:'Seat occupied'}, 409);
-    const arrivals = {...JSON.parse(row.arrivals), [p.id]:name};
+    if (!p.openSeat && p.name.toLocaleLowerCase() !== name.toLocaleLowerCase()) return json({error:'Seat occupied'}, 409);
+    if (!p.openSeat && (body.beginner === undefined || body.beginner === p.beginner)) return json({pid:p.id});
+    const arrivals = JSON.parse(row.arrivals);
+    const prior = arrivals[p.id];
+    arrivals[p.id] = {name, beginner:body.beginner, version:(prior ? prior.version || 1 : 0) + 1};
     const write = await db.prepare('UPDATE score_tables SET arrivals = ? WHERE id = ? AND revision = ? AND arrivals = ?')
       .bind(JSON.stringify(arrivals), id, row.revision, row.arrivals).run();
     if (write.meta.changes) return json({pid:p.id});
@@ -46,7 +54,7 @@ async function handleTable(request, db, id) {
     const row = await db.prepare('SELECT revision, stamp, snapshot, arrivals FROM score_tables WHERE id = ?').bind(id).first();
     if (!row) return json({error:'Table not found'}, 404);
     const params = new URL(request.url).searchParams;
-    const seatsVersion = Object.keys(JSON.parse(row.arrivals)).length;
+    const seatsVersion = arrivalVersion(JSON.parse(row.arrivals));
     if (params.get('since') === String(row.revision) && Number(params.get('seats')) === seatsVersion) return json({revision:row.revision});
     return json({revision:row.revision, stamp:row.stamp, ...withArrivals(row)});
   }

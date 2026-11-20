@@ -126,7 +126,7 @@ const liveTable = (() => {
     await read();
   }
   async function copyLink() {
-    try { await navigator.clipboard.writeText(link().href); toast('Table link copied · 已複製觀戰連結'); }
+    try { await navigator.clipboard.writeText(link().href); toast('Table link copied · 已複製牌桌連結'); return true; }
     catch { window.prompt('Copy this table link · 請複製牌桌連結', link().href); }
   }
   function status() {
@@ -139,6 +139,7 @@ const liveTable = (() => {
   }
   return {
     get active() { return id !== null && id !== undefined; },
+    get chatURL() { return url() + '/chat'; },
     get roomId() { return id || 'local'; },
     get viewer() { return !!id && !token; },
     get locked() { return this.active && (!token || !ready || !!pending); },

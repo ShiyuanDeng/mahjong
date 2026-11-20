@@ -1,0 +1,33 @@
+#table-chat {
+  width: min(440px, calc(100vw - 20px)); height: min(540px,72dvh);
+  max-height: 90dvh; max-width: 100%; margin: auto clamp(10px,3vw,48px) max(10px,env(safe-area-inset-bottom)) auto;
+  padding: 0; color: #283b31; border: 1px solid #b29764; border-radius: 12px;
+  background: #f6f1e3; box-shadow: 0 12px 46px #05181180; overflow: hidden;
+}
+#table-chat[open] {display: flex; flex-direction: column}
+#table-chat [hidden] {display: none}
+#table-chat::backdrop {background: #14261c33}
+.chat-head {display: flex; flex: none; align-items: center; justify-content: space-between; padding: 8px 16px; background: #224735; color: #f9efd3}
+.chat-head h2 {font: bold 1.4rem/1.3 Georgia,serif}
+.chat-head h2 small {font: 600 .85rem var(--body); color: #e5cf9e}
+#chat-close {width: 38px; height: 38px; border: 1px solid #849684; border-radius: 5px; background: transparent; color: inherit; font-size: 1.5rem}
+#chat-scores {display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); padding: 6px 10px; background: #e9e3cf; border-bottom: 1px solid #cabf9f}
+#chat-scores span {display: grid; text-align: center; border-right: 1px solid #c8bea5}
+#chat-scores span:last-child {border-right: 0}
+#chat-scores small {overflow: hidden; text-overflow: ellipsis; white-space: nowrap}
+#chat-invite {text-align: right; padding: 3px 10px}
+#chat-invite .btn {background: transparent; color: #30523f; border: 0; padding: 5px; min-height: 32px; font-size: .8rem}
+#chat-log {flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0 14px}
+#chat-log article {margin-block: 6px; padding: 8px 12px; background: #fffbee; border: 1px solid #d8d0b9; border-radius: 9px; overflow-wrap: anywhere}
+#chat-log article b {font-size: .88rem; color: #27563e}
+#chat-log time {margin-left: .65rem; font-size: .75rem; color: #626b5c}
+#chat-log p {margin: 3px 0 0; line-height: 1.4; white-space: pre-wrap}
+#chat-status {margin: 0; padding: 6px 14px; color: #525d50; font-size: .9rem}
+#chat-status:empty {padding: 0}
+#chat-create {align-self: flex-start; margin: 6px 14px 16px}
+#chat-form {padding: 8px 12px 12px; border-top: 1px solid #cbc2a9}
+#chat-form label {display: block; font-weight: 650; font-size: .82rem; margin-bottom: 4px}
+#chat-form div {display: flex; gap: 6px}
+#chat-form input {flex: 1; min-width: 0; background: #fffdf5; border: 1px solid #b4b298; border-radius: 6px; padding: 8px 10px; font-size: 1rem; color: #283b31}
+#chat-form .btn {flex: none; min-height: 40px}
+@media(max-height:500px) {#table-chat {height: 92dvh; max-height: 94dvh}.chat-head,#chat-form {padding-block: 3px}}

@@ -1,4 +1,4 @@
-// A random table ID grants read access. Only the separate device-held key can write.
+// The table link grants read and chat access. Editing scores requires the device-held key.
 const UUID = /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/;
 const MAX_BYTES = 800000;
 const pagesOrigin = 'https://shiyuandeng.github.io';
@@ -76,15 +76,41 @@ async function handleTable(request, db, id) {
   return json({error:'Table has changed'}, 409);
 }
 
+async function handleChat(request, db, id) {
+  if (!['GET', 'POST'].includes(request.method)) return json({error:'Method not allowed'}, 405);
+  const room = await db.prepare('SELECT 1 AS present FROM score_tables WHERE id = ?').bind(id).first();
+  if (!room) return json({error:'Table not found'}, 404);
+  if (request.method === 'GET') {
+    const after = Number(new URL(request.url).searchParams.get('after') || 0);
+    if (!Number.isSafeInteger(after) || after < 0) return json({error:'Invalid cursor'}, 400);
+    const query = 'SELECT id, sender, message, sent_at FROM table_messages WHERE table_id = ? AND id > ? ';
+    const rows = await db.prepare(query + (after ? 'ORDER BY id ASC' : 'ORDER BY id DESC') + ' LIMIT 100')
+      .bind(id, after).all();
+    return json({messages:after ? rows.results : rows.results.reverse()});
+  }
+  if (Number(request.headers.get('Content-Length')) > 8192) return json({error:'Message too large'}, 413);
+  let body;
+  try { body = await request.json(); } catch { return json({error:'Invalid message'}, 400); }
+  const sender = typeof body?.sender === 'string' ? body.sender.trim() : '';
+  const message = typeof body?.message === 'string' ? body.message.trim() : '';
+  if (!sender || sender.length > 24 || !message || message.length > 500 || typeof body?.requestId !== 'string' || !UUID.test(body.requestId)) {
+    return json({error:'Invalid message'}, 400);
+  }
+  await db.prepare('INSERT INTO table_messages (table_id, request_id, sender, message, sent_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(table_id, request_id) DO NOTHING')
+    .bind(id, body.requestId, sender, message, Date.now()).run();
+  return json({sent:true});
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/tables/')) {
-      const id = url.pathname.slice('/api/tables/'.length);
+      const [id, section, ...extra] = url.pathname.slice('/api/tables/'.length).split('/');
+      if (extra.length || (section !== undefined && section !== 'chat')) return json({error:'Not found'}, 404);
       if (!UUID.test(id)) return json({error:'Invalid table link'}, 404);
       const origin = request.headers.get('Origin');
       if (origin && origin !== url.origin && origin !== pagesOrigin) return json({error:'Unknown origin'}, 403);
-      const response = request.method === 'OPTIONS' ? new Response(null, {status:204}) : await handleTable(request, env.DB, id);
+      const response = request.method === 'OPTIONS' ? new Response(null, {status:204}) : await (section === 'chat' ? handleChat : handleTable)(request, env.DB, id);
       if (origin === pagesOrigin) {
         response.headers.set('Access-Control-Allow-Origin', pagesOrigin);
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');

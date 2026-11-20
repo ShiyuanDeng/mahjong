@@ -89,6 +89,7 @@ function actionRack() {
   const actions = [
     ro() ? '' : commandTile('局','New game','新牌局','openSeats',{tone:'ruby'}),
     commandTile('榜','Leaders','排行榜','#leaderboard',{tone:'jade'}),
+    liveTable.active || !sync.hosted ? commandTile('聊','Chat','聊天室','openChat',{tone:'jade'}) : '',
     commandTile('記','History','牌局紀錄','#history'),
     commandTile('番','Rules','玩法','#rules',{tone:'ruby'}),
     commandTile('設','Setup','設定','#setup',{tone:'jade'}),

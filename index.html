@@ -267,6 +267,7 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
 <link rel="stylesheet" href="pattern-picker.css">
 <link rel="stylesheet" href="pov.css">
 <link rel="stylesheet" href="overhead.css">
+<link rel="stylesheet" href="chat.css">
 </head>
 <body>
 <header class="top masthead">
@@ -303,6 +304,18 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
     <p id="join-error" role="status"></p><button type="submit">Join table · 加入牌桌</button>
   </form>
 </dialog>
+<dialog id="table-chat" aria-labelledby="chat-title">
+  <header class="chat-head"><div><h2 id="chat-title">Table chat <small lang="zh-Hant">牌桌聊天室</small></h2></div><button type="button" id="chat-close" aria-label="Close chat · 關閉聊天室" autofocus>×</button></header>
+  <div id="chat-scores" aria-label="Total scores · 總分"></div>
+  <div id="chat-invite"><button id="chat-copy" type="button" class="btn">Copy table link · 複製牌桌連結</button></div>
+  <div id="chat-log" role="log" aria-label="Messages · 訊息" tabindex="0"></div>
+  <p id="chat-status" role="status"></p>
+  <button type="button" class="btn primary" id="chat-create">Share this table · 共享牌桌</button>
+  <form id="chat-form"><label for="chat-text">Message · 訊息</label><div>
+    <input id="chat-text" maxlength="500" required autocomplete="off" placeholder="Aa · 輸入訊息"><button type="submit" class="btn primary">Send · 傳送</button>
+  </div></form>
+</dialog>
+<script src="chat.js"></script>
 <script src="pov.js"></script>
 <script src="pattern-picker.js"></script>
 <script src="rules-guide.js"></script>
@@ -479,7 +492,7 @@ function save(){ if (liveTable.active) { liveTable.saveChange(); return; } keep(
 const sync = {hosted:!!(window.claude && window.claude.use), mode:'local', canWrite:null, exists:false, slow:false, lost:false, shown:null, last:null};
 let ref = null, writing = false, dirty = false, slowTimer = null;
 const ro = () => liveTable.viewer || (sync.mode === 'live' && sync.canWrite === false);
-const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink','tableFocus','myView']);
+const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink','tableFocus','myView','openChat']);
 function refresh(){ render(); if (sheetOpen && draft) renderHand(true); }
 function adopt(d){
   sync.shown = d.stamp;
@@ -666,6 +679,7 @@ function render(){
   $('view').innerHTML = liveTable.active && !liveTable.available && v !== 'rules' ? '<p class="card">' + esc(liveTable.status()) + '</p>' : ({table:viewTable, leaderboard:viewLeaderboard, history:viewHistory, rules:viewRules, setup:viewSetup})[v]();
   renderTally();
   renderSharing();
+  if ($('table-chat').open) tableChat.refresh();
   mySeat.ensure();
   if (ro() || liveTable.locked) $('view').querySelectorAll('input,select').forEach(e => e.disabled = true);
   if (v === 'rules' && focusRule) {
@@ -993,6 +1007,7 @@ const A = {
     if (enter) window.scrollTo(0, 0);
   },
   myView(){ mySeat.show(); },
+  openChat(){ tableChat.open(); },
   createLiveTable(){
     const profile = mySeat.profile;
     liveTable.create();

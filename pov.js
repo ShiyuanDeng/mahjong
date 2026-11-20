@@ -104,6 +104,44 @@ function seatedCharacters(seats) {
   return seats.map(pid => cast.get(pid));
 }
 
+// Each endpoint is on the felt, a little inside its wooden rail. Coordinates
+// are thousandths of the original photograph, ordered from farthest to nearest.
+const sideRackLines = {
+  wide: {
+    east:  {far:[259,705,555], near:[107,853,745]},
+    south: {far:[325,670,410], near:[237,755,650]},
+    west:  {far:[305,682,480], near:[190,803,700]},
+    north: {far:[334,684,530], near:[214,800,750]}
+  },
+  phone: {
+    east:  {far:[172,825,320], near:[33,966,430]},
+    south: {far:[275,698,325], near:[109,871,473]},
+    west:  {far:[207,790,355], near:[52,948,483]},
+    north: {far:[284,721,315], near:[61,936,481]}
+  }
+};
+
+function sideRack(layout, camera, right, mirrored) {
+  const {far, near} = sideRackLines[layout][camera];
+  const column = right !== mirrored ? 1 : 0;
+  const x = point => mirrored ? 1000 - point[column] : point[column];
+  const startX = x(far), startY = far[2], dx = (x(near) - startX) / 13, dy = (near[2] - startY) / 13;
+  // A back face stands vertically. Only the row's baseline recedes along the rail.
+  const height = layout === 'wide' ? 29 : 17, depth = right ? 6 : -6;
+  const id = 'side-tile-' + layout + (right ? '-right' : '-left');
+  const tile = `<g id="${id}" stroke="#344b39" stroke-width=".7" stroke-linejoin="round">
+    <path fill="url(#tile-back-${layout})" d="M0,0 l${dx},${dy} v${-height} l${-dx},${-dy} Z"/>
+    <path fill="#e0d8b5" d="M0,${-height} l${dx},${dy} l${depth},-2 l${-dx},${-dy} Z"/>
+    <path fill="#43644a" d="M${dx},${dy} l${depth},-2 v${-height} l${-depth},2 Z"/>
+  </g>`;
+  const tiles = Array.from({length:13}, (_, i) => {
+    const distance = .80 * i + .20 * i * i / 13;
+    const scale = .80 + .20 * (2 * i + 1) / 13;
+    return `<use href="#${id}" transform="translate(${startX + dx * distance} ${startY + dy * distance}) scale(${scale})"/>`;
+  });
+  return `<defs>${tile}</defs><g class="tile-row">${tiles.join('')}</g>`;
+}
+
 function tableScene(seats, bottom) {
   const cast = seatedCharacters(seats);
   const cameras = ['east','south','west','north'];
@@ -124,8 +162,19 @@ function tableScene(seats, bottom) {
   // Normal and reversed seating each use a single photograph. Other permutations
   // replace the one side that changed, keeping every face beside its actual name.
   const layers = [plate(centre, 'scene-base', reverse)];
-  if (reverse ? !reverseLeft : left !== centre) layers.push(plate(left, 'scene-left'));
-  if (reverse ? !reverseRight : right !== centre) layers.push(plate(right, 'scene-right'));
+  const replaceLeft = reverse ? !reverseLeft : left !== centre;
+  const replaceRight = reverse ? !reverseRight : right !== centre;
+  if (replaceLeft) layers.push(plate(left, 'scene-left'));
+  if (replaceRight) layers.push(plate(right, 'scene-right'));
+  for (const layout of ['wide', 'phone']) {
+    layers.push(`<svg class="side-racks racks-${layout}" viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
+      <defs><linearGradient id="tile-back-${layout}" x2="0" y2="1">
+        <stop stop-color="#8da488"/><stop offset=".16" stop-color="#497553"/><stop offset=".9" stop-color="#325941"/><stop offset=".94" stop-color="#dbd4b4"/>
+      </linearGradient></defs>
+      ${sideRack(layout, replaceLeft ? left : centre, false, !replaceLeft && reverse)}
+      ${sideRack(layout, replaceRight ? right : centre, true, !replaceRight && reverse)}
+    </svg>`);
+  }
   return `<div class="table-photo" data-camera-seat="${centre}" aria-hidden="true">${layers.join('')}</div>`;
 }
 

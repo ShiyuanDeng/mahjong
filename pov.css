@@ -7,9 +7,12 @@
 .table-page .wrap{padding-bottom:0}
 .table-page #tally{padding-top:5px;padding-bottom:5px;background:#f3efe2}
 .table-page .pov-stage{position:relative;display:block;min-height:490px;isolation:isolate;overflow:hidden;padding:0;box-shadow:none;background:#174735;color:#fbefce}
-.table-photo,.scene-plate,.scene-plate img{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.table-photo,.scene-plate,.scene-plate img,.side-racks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .table-photo{z-index:-2}
 .scene-plate img{display:block;object-fit:fill}
+.side-racks{overflow:hidden}.racks-phone{display:none}
+.tile-row{filter:drop-shadow(1px 2px 1px #14281980)}
+@media (orientation:portrait){.racks-wide{display:none}.racks-phone{display:block}}
 .scene-plate .mirrored{transform:scaleX(-1)}
 .scene-left{mask-image:linear-gradient(to right,#000 26%,transparent 36%)}
 .scene-right{mask-image:linear-gradient(to left,#000 26%,transparent 36%)}
@@ -35,9 +38,6 @@
 .pov-seats .rank-pin{background:#224138}.pov-seats .rank-pin.leading{background:#eecb83}
 .concealed-wall{position:absolute;pointer-events:none;display:flex;gap:1px;left:50%;bottom:calc(100% + 5px);transform:translateX(-50%);filter:drop-shadow(2px 4px 2px #0d241cad)}
 .concealed-wall i{width:clamp(9px,1.18vw,20px);height:clamp(21px,2.4vw,40px);border:1px solid #819579;border-bottom:2px solid #d1c4a4;border-radius:3px 3px 2px 2px;background:linear-gradient(165deg,#fbf4d9 0 10%,#d9d0ae 12% 18%,#8c9e77 19% 22%,transparent 24%),linear-gradient(100deg,#477855,#265539 85%,#244833);box-shadow:inset -1px 0 #244732}
-.pos-1 .concealed-wall,.pos-3 .concealed-wall{width:max-content;bottom:50%;transform-origin:center}
-.pos-1 .concealed-wall{left:104%;transform:translate(-32%,-44%) rotate(60deg) skew(12deg)}
-.pos-3 .concealed-wall{left:-4%;transform:translate(-68%,-44%) rotate(-60deg) skew(-12deg)}
 .pov-centre{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:5px;text-align:center;pointer-events:none}
 .wind-counter{display:grid;place-content:center;justify-items:center;gap:3px;width:clamp(80px,8vw,113px);aspect-ratio:1.36;border:2px solid #c5aa70;border-radius:50%;color:#382a1b;background:radial-gradient(ellipse,#f7e6b6 0 58%,#b8a06a 59% 60%,#e5cfa0 61% 67%,#947543 68%);box-shadow:0 3px #a48754,0 6px #775b36,3px 10px 10px #0a261b88}
 .wind-counter b{font:900 clamp(1.6rem,3.1vw,2.7rem)/1 var(--display);color:#7e2e20}.wind-counter small{font:700 .63rem/1.1 var(--body)}
@@ -72,7 +72,6 @@
   .table-page .pov-stage{min-height:455px;background-size:auto 100%}
   .pov-seats.seat-ring .seat{max-width:27%;min-width:0;padding:6px 7px;gap:5px}
   .pov-seats .pos-1{left:84%}.pov-seats .pos-3{left:16%}
-  .pov-seats .pos-1 .concealed-wall{left:81%}.pov-seats .pos-3 .concealed-wall{left:19%}
   .rack-bookend{display:none}.hand-rack{width:94%}.rack-tiles{gap:2px;padding:0 1%}
   .command-tile{min-height:75px}.command-tile small{font-size:.65rem}
   .score-tiles{left:71%;top:63%}
@@ -116,8 +115,9 @@
   .table-photo[data-camera-seat=south] ~ .seat-ring .pos-2{top:42%}
   .table-photo[data-camera-seat=west] ~ .seat-ring .pos-2{top:50%}
   .table-photo[data-camera-seat=south] ~ .pov-centre{top:58%}
-  .pov-seats .pos-3{left:24%;top:60%}
-  .pov-seats .pos-1{left:76%;top:60%}
+  .pov-seats .pos-3{left:34%;top:64%}
+  .pov-seats .pos-1{left:66%;top:64%}
+  .pov-seats.seat-ring :is(.pos-1,.pos-3){max-width:18%}
   .pov-centre{top:64%;display:flex;align-items:center;gap:8px}
   .wind-counter{width:clamp(64px,6vw,90px)}
   .wind-counter b{font-size:clamp(1.6rem,2.3vw,2.2rem)}
@@ -134,17 +134,25 @@
   .table-page .pov-stage{min-height:265px}
   .pov-seats .pos-0{top:66%}
   .pov-seats .pos-2{top:49%}
+  .pov-seats .pos-3{left:10%;top:57%}
+  .pov-seats .pos-1{left:90%;top:57%}
   .pov-centre,.table-photo[data-camera-seat=south] ~ .pov-centre{top:8%;left:42%;gap:5px}
   .pov-centre .wind-counter{width:auto;aspect-ratio:auto;padding:2px 8px;display:flex;gap:3px;align-items:center;border-radius:4px;box-shadow:none}
   .wind-counter b{font-size:1rem}.hand-counter{font-size:.7rem}
-  .score-tiles{top:68%;left:70%}
+  .score-tiles{top:58%;left:66%}
   .score-tiles .command-tile{width:38px;min-height:34px}
   .hand-rack .command-tile{height:48px}
   .hand-rack .rack-bookend{--mj-tile-width:30px}
   .hand-rack .rack-ledge{height:12px;margin-top:3px}
 }
+@media (orientation:portrait) {
+  .pov-seats .pos-1,.pov-seats .pos-3{top:55%}
+}
 @media (orientation:portrait) and (min-aspect-ratio:2/3) {
-  .scene-plate img{object-fit:cover;object-position:center 4%}
+  /* Use the photo's intrinsic portrait ratio for both the picture and tile plane.
+     This reproduces the 4% top crop while keeping their coordinates identical. */
+  .scene-plate,.racks-phone{height:auto;min-height:100%;bottom:auto;top:4%;aspect-ratio:864 / 1535;transform:translateY(-4%)}
   .pov-seats .pos-2{top:45%}
+  .pov-seats .pos-1{left:69%;top:54%}.pov-seats .pos-3{left:31%;top:54%}
   .pov-centre{top:56%}
 }

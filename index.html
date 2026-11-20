@@ -716,7 +716,7 @@ function viewTable(){
     const dealer = i === ts.dealer;
     const position = (i - bottom + 4) % 4;
     const mine = mySeat.profile?.pid === pid;
-    const wall = position === 0 ? '' : '<span class="concealed-wall" aria-hidden="true">' + '<i></i>'.repeat(13) + '</span>';
+    const wall = position !== 2 ? '' : '<span class="concealed-wall" aria-hidden="true">' + '<i></i>'.repeat(13) + '</span>';
     const label = `${pname(pid)}, ${w.en} ${w.zh}家, rank ${rank} 第${rank}名, ${signed(points)} total points 總分${last ? ', last place 末位' : ''}${dealer ? ', Dealer 莊家' : ''}`;
     return `<button class="seat pos-${position}${dealer ? ' dealer' : ''}" data-a="win" data-p="${pid}" ${ro() ? 'disabled' : ''} aria-label="${esc(label)}">
       ${wall}<span class="rank-pin ${last ? 'trailing' : points === highest && highest > lowest ? 'leading' : ''}" title="Table rank · 本桌總分排名"><span>#${rank}</span>${last ? '<span class="poop" aria-hidden="true">💩</span>' : ''}</span>

@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mahjong Score Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a green felt table with four seat tiles is the home screen; you tap the seat that won.
+   Everything else is quiet lists around it. Tile faces keep fixed ivory colours in both themes. */
+:root{
+  --bg:#EDF1EB; --surface:#FBFCF9; --ink:#14201A; --muted:#586860; --line:#D0D9D0;
+  --felt:#1E6A4C; --felt-deep:#124632; --on-felt:#F2F7F1;
+  --up:#17694A; --down:#B23A2C; --bamboo:#C99A3B;
+  --tile:#FAF7EC; --tile-ink:#18221C; --tile-red:#BE3527; --tile-green:#1F7A4D; --tile-blue:#2B5C9E;
+  --display:"Noto Serif TC","Songti TC","PMingLiU","Noto Serif CJK TC",Georgia,serif;
+  --body:"Schibsted Grotesk",system-ui,-apple-system,"PingFang HK","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1512; --surface:#17211C; --ink:#E7EDE7; --muted:#97A69C; --line:#2B3931;
+    --felt:#226F51; --felt-deep:#0F3B2B; --on-felt:#F2F7F1;
+    --up:#62C99A; --down:#F0907F;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1512; --surface:#17211C; --ink:#E7EDE7; --muted:#97A69C; --line:#2B3931;
+  --felt:#226F51; --felt-deep:#0F3B2B; --on-felt:#F2F7F1;
+  --up:#62C99A; --down:#F0907F;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--bamboo);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+#view{display:flex;flex-direction:column;gap:16px}
+#resume{position:sticky;top:8px;z-index:5}
+#resume:empty{display:none}
+.num{font-variant-numeric:tabular-nums}
+.zh{font-family:var(--display);font-weight:700}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px 96px;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top h1{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.01em}
+.top .rule{font-size:13px;color:var(--muted)}
+.sync{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);flex-basis:100%}
+.sync::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--line);flex:none}
+.sync.live::before{background:var(--up)}.sync.warn::before{background:var(--bamboo)}
+.ro .eo{display:none!important}
+.note{font-size:14px;color:var(--muted);border-left:3px solid var(--bamboo);padding:2px 0 2px 10px}
+.resume{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--felt);color:var(--on-felt);border-radius:12px;padding:10px 12px;font-size:14px}
+.resume button{background:var(--on-felt);color:var(--felt-deep);border:0;border-radius:8px;padding:8px 12px;font-weight:700;white-space:nowrap}
+
+/* felt table */
+.status{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.status b{color:var(--ink)}
+.felt{background:var(--felt);border-radius:20px;padding:16px 12px 20px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-areas:"w w w" "n c s" "e e e";gap:12px 8px;box-shadow:inset 0 0 0 4px var(--felt-deep)}
+.seat{position:relative;background:var(--tile);color:var(--tile-ink);border:0;border-radius:10px;padding:8px 6px 9px;box-shadow:0 5px 0 var(--bamboo);display:flex;flex-direction:column;align-items:center;gap:1px;min-height:92px;min-width:0;text-align:center}
+.seat:active{transform:translateY(3px);box-shadow:0 2px 0 var(--bamboo)}
+.seat .wind{font-family:var(--display);font-weight:900;font-size:26px;line-height:1.1}
+.seat .who{font-weight:700;font-size:14px;line-height:1.2;overflow-wrap:anywhere;max-width:100%}
+.seat .pts{font-size:15px;font-variant-numeric:tabular-nums}
+.seat .pts.up{color:#17694A}.seat .pts.down{color:#B23A2C}
+.seat .zhuang{position:absolute;top:-8px;right:-6px;width:28px;height:28px;border-radius:50%;background:var(--tile-red);color:#fff;font-family:var(--display);font-weight:900;font-size:15px;display:grid;place-items:center;box-shadow:0 0 0 2px var(--felt)}
+.pos-0{grid-area:e;justify-self:center;width:min(62%,210px)}
+.pos-2{grid-area:w;justify-self:center;width:min(62%,210px)}
+.pos-1{grid-area:s}.pos-3{grid-area:n}
+.centre{grid-area:c;color:var(--on-felt);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;min-width:0}
+.centre .round{font-family:var(--display);font-weight:900;font-size:24px;line-height:1.1}
+.centre .hand{font-size:13px;opacity:.85}
+.centre button{margin-top:4px;background:transparent;color:var(--on-felt);border:1.5px solid rgba(242,247,241,.6);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700}
+.hint{font-size:14px;color:var(--muted);text-align:center;margin-top:-4px}
+
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-weight:700;font-size:15px;min-height:46px}
+.btn.primary{background:var(--felt);border-color:var(--felt);color:var(--on-felt)}
+.btn.danger{color:var(--down)}
+.btn.grow{flex:1}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card h2{font-size:17px}
+.card h2 .zh{font-size:18px;margin-right:6px}
+.sub{font-size:13px;color:var(--muted)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list .rank{width:1.4em;color:var(--muted);font-variant-numeric:tabular-nums}
+.list .name{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.list .tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;white-space:nowrap}
+.amt{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.amt.up{color:var(--up)}.amt.down{color:var(--down)}
+
+/* leaderboard */
+.leadlink{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;color:inherit}
+.leadlink .who{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}
+.leadlink .go{font-weight:700;white-space:nowrap;color:var(--muted)}
+.lb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.lb li{display:grid;grid-template-columns:32px 1fr auto;gap:5px 12px;align-items:center;padding:13px 0;border-top:1px solid var(--line)}
+.lb li:first-child{border-top:0}
+.lb .rk{grid-row:1 / span 3;align-self:start;width:30px;height:40px;border-radius:5px;background:var(--tile);color:var(--tile-ink);box-shadow:0 3px 0 var(--bamboo),0 0 0 1px rgba(20,32,26,.14);display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:18px;font-variant-numeric:tabular-nums}
+.lb li.first .rk{color:var(--tile-red)}
+.lb .nm{font-weight:700;font-size:17px;min-width:0;overflow-wrap:anywhere}
+.lb .nm .tag{font-weight:500;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:6px;white-space:nowrap}
+.lb .tot{font-size:20px}
+.lb .bar{grid-column:2 / 4;height:6px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.lb .bar i{position:absolute;top:0;bottom:0}
+.lb .bar i.up{left:50%;background:var(--up)}.lb .bar i.down{right:50%;background:var(--down)}
+.lb .st{grid-column:2 / 4;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 12px}
+.lb .st b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* history */
+.hand-row{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:4px}
+.hand-row:first-of-type{border-top:0}
+.hand-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hand-head .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.fanpill{font-family:var(--display);font-weight:900;font-size:14px;background:var(--felt);color:var(--on-felt);border-radius:6px;padding:1px 7px;white-space:nowrap}
+.fanpill.limit{background:var(--tile-red);color:#fff}
+.deltas{display:flex;gap:4px 12px;flex-wrap:wrap;font-size:14px}
+
+/* tiles */
+.tiles{display:flex;flex-wrap:wrap;gap:6px 8px;padding-bottom:4px}
+.tg{display:flex;gap:2px}
+.tile{width:25px;height:34px;background:var(--tile);color:var(--tile-ink);border-radius:4px;box-shadow:0 3px 0 var(--bamboo),0 0 0 1px rgba(20,32,26,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--display);font-weight:900;line-height:1}
+.tile b{font-size:14px;font-weight:900}
+.tile i{font-style:normal;font-size:11px;margin-top:1px}
+.t-m i{color:var(--tile-red)}.t-p b,.t-p i{color:var(--tile-blue)}.t-s b,.t-s i{color:var(--tile-green)}
+.t-h b{font-size:19px}
+.t-C b{color:var(--tile-red)}.t-F b{color:var(--tile-green)}
+.t-P b{width:15px;height:21px;border:2.5px solid var(--tile-blue);border-radius:2px}
+
+/* rules */
+.paytable{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.paytable th{font-weight:500;color:var(--muted);text-align:right;padding:4px 6px;font-size:12px;vertical-align:bottom}
+.paytable td{text-align:right;padding:6px;border-top:1px solid var(--line)}
+.paytable th:first-child,.paytable td:first-child{text-align:left}
+.grp-h{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+.grp-h .zh{font-size:20px;font-weight:900}
+.grp-h span:last-child{color:var(--muted);font-size:14px}
+.rule-card{scroll-margin-top:70px}
+.rule-card.focus{border-color:var(--bamboo);box-shadow:0 0 0 3px var(--bamboo)}
+.rule-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rule-head .zh{font-size:21px;font-weight:900}
+.rule-head .en{color:var(--muted);font-size:14px;flex:1}
+.rule-card p{margin:0;font-size:15px}
+.rule-card .extra{font-size:13px;color:var(--muted)}
+
+/* sheets */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column}
+.sheet[hidden]{display:none}
+.sheet-head{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.sheet-head h2{font-size:18px;flex:1;min-width:0;overflow-wrap:anywhere}
+.sheet-head button{background:none;border:0;padding:10px 4px;font-weight:700;color:var(--muted)}
+.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-in{max-width:560px;margin:0 auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px}
+.sheet-foot{border-top:1px solid var(--line);background:var(--surface);padding:10px 16px 14px}
+.sheet-foot .in{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.sec-h{font-size:13px;font-weight:700;color:var(--muted);text-transform:none;display:flex;gap:8px;align-items:baseline}
+.sec-h .zh{font-size:16px;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:700;min-height:46px;overflow-wrap:anywhere;text-align:left}
+.chip[aria-pressed="true"]{background:var(--felt);border-color:var(--felt);color:var(--on-felt)}
+.pats{display:flex;flex-direction:column;gap:8px}
+.pat{display:grid;grid-template-columns:1fr 46px;gap:8px}
+.pat-main{display:flex;align-items:center;gap:10px;min-height:54px;padding:7px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);text-align:left;min-width:0}
+.pat-main .nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.pat-main .nm .zh{font-size:18px;font-weight:900;line-height:1.2}
+.pat-main .nm small{font-size:12.5px;opacity:.8;overflow-wrap:anywhere}
+.pat-main .fan{font-family:var(--display);font-weight:900;font-size:15px;white-space:nowrap}
+button.pat-main[aria-pressed="true"],.pat-main.on{background:var(--felt);border-color:var(--felt);color:var(--on-felt)}
+button.pat-main:disabled{opacity:.45;cursor:not-allowed}
+.info{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:18px;color:var(--muted)}
+.step{display:flex;align-items:center;gap:4px}
+.step button{width:36px;height:36px;border-radius:8px;border:1.5px solid currentColor;background:transparent;font-weight:700;font-size:18px;line-height:1;opacity:.9}
+.step button:disabled{opacity:.3}
+.step output{min-width:1.4em;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.adj{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px dashed var(--line);border-radius:10px;padding:8px 12px}
+.sum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sum .big{font-family:var(--display);font-weight:900;font-size:24px}
+.sum .why{font-size:13px;color:var(--muted)}
+.pays{font-size:14px;display:flex;gap:2px 12px;flex-wrap:wrap}
+.warn{font-size:14px;color:var(--down);font-weight:500}
+
+/* forms */
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.field select,.field input,.pl input{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;min-height:46px;width:100%;min-width:0}
+.seatpick{display:grid;grid-template-columns:46px 1fr;gap:10px;align-items:center}
+.seatpick .zh{font-size:26px;font-weight:900;text-align:center}
+.pl{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.pl button{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;min-height:46px;padding:0 12px;color:var(--muted);font-weight:700;font-size:14px}
+
+/* nav, toast, dialog */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line)}
+.nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 4px 10px;text-decoration:none;color:var(--muted);font-size:12.5px;font-weight:700;border-top:3px solid transparent;margin-top:-1px}
+.nav a .zh{font-size:18px;font-weight:900;line-height:1.2}
+.nav a[aria-current="page"]{color:var(--felt);border-top-color:var(--felt)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .nav a[aria-current="page"]{color:var(--up);border-top-color:var(--up)}}
+:root[data-theme="dark"] .nav a[aria-current="page"]{color:var(--up);border-top-color:var(--up)}
+.toast{position:fixed;left:16px;right:16px;bottom:76px;z-index:40;max-width:528px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px}
+.toast[hidden]{display:none}
+.toast button{background:none;border:1.5px solid currentColor;border-radius:8px;padding:6px 10px;font-weight:700;color:inherit;white-space:nowrap}
+.dlg{position:fixed;inset:0;z-index:50;background:rgba(8,14,11,.55);display:grid;place-items:center;padding:20px}
+.dlg[hidden]{display:none}
+.dlg .box{background:var(--surface);border-radius:14px;padding:18px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:14px}
+.dlg p{margin:0}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Mahjong Score Table</h1>
+    <span class="rule" id="ruleline"></span>
+    <span class="sync" id="syncline" role="status"></span>
+  </header>
+  <div id="resume"></div>
+  <main id="view"></main>
+</div>
+
+<nav class="nav" aria-label="Sections"><div class="in">
+  <a href="#table" data-tab="table"><span class="zh">檯</span>Table</a>
+  <a href="#leaderboard" data-tab="leaderboard"><span class="zh">榜</span>Leaders</a>
+  <a href="#history" data-tab="history"><span class="zh">局</span>History</a>
+  <a href="#rules" data-tab="rules"><span class="zh">番</span>Rules</a>
+  <a href="#setup" data-tab="setup"><span class="zh">人</span>Setup</a>
+</div></nav>
+
+<div class="sheet" id="handsheet" hidden role="dialog" aria-modal="true" aria-labelledby="hs-title"></div>
+<div class="sheet" id="seatsheet" hidden role="dialog" aria-modal="true" aria-labelledby="ss-title"></div>
+<div class="toast" id="toast" hidden role="status"></div>
+<div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div>
+
+<script>
+/* =====================================================================
+   RULE SETS. To add another variant (riichi, Sichuan, ...) add an entry
+   here with the same shape, then pick it in Setup. Nothing else in the
+   page is specific to Hong Kong rules.
+   ===================================================================== */
+const RULESETS = {
+  hk: {
+    id: 'hk',
+    label: 'Hong Kong 香港',
+    winds: [{zh:'東',en:'East'},{zh:'南',en:'South'},{zh:'西',en:'West'},{zh:'北',en:'North'}],
+    options: [
+      {key:'minFan', label:'Minimum fan to win (起糊)', def:3,
+       choices:[[0,'0 fan (雞糊 allowed)'],[1,'1 fan'],[2,'2 fan'],[3,'3 fan'],[4,'4 fan']]},
+      {key:'limitFan', label:'Limit (爆棚)', def:10,
+       choices:[[8,'8 fan'],[10,'10 fan'],[13,'13 fan']]},
+      {key:'discardPay', label:'Win off a discard', def:'half',
+       choices:[['half','半銃: discarder pays double, others single'],['full','全銃: discarder pays for everyone']]}
+    ],
+    // points for 0..13 fan. Self-draw: each loser pays 2x this.
+    baseByFan: [1,2,4,8,16,24,32,48,64,96,128,192,256,384],
+    selfDraw: {id:'zimo', zh:'自摸', en:'Self-draw', fan:1, group:'win',
+      desc:'You draw the winning tile yourself. It is added for you when you record the hand as a self-draw.'},
+    groups: [
+      {id:'win', zh:'食糊', en:'How the hand was won'},
+      {id:'shape', zh:'牌型', en:'Shape of the hand'},
+      {id:'honour', zh:'番子', en:'Winds and dragons'},
+      {id:'flower', zh:'花', en:'Flowers'},
+      {id:'limit', zh:'爆棚', en:'Limit hands'}
+    ],
+    patterns: [
+      {id:'menqing', group:'win', zh:'門前清', en:'Concealed hand', fan:1,
+       desc:'You showed no melds before winning. Every set came from your own draws. A concealed kong is fine.',
+       extra:'Counts whether you win off a discard or by self-draw.'},
+      {id:'qianggang', group:'win', zh:'搶槓', en:'Robbing a kong', fan:1, needs:'discard',
+       desc:'Another player adds a fourth tile to an exposed pung, and that tile completes your hand.',
+       extra:'Record it as a win off that player.'},
+      {id:'gangshang', group:'win', zh:'槓上開花', en:'Win on a kong', fan:1, needs:'self',
+       desc:'You declare a kong and the replacement tile completes your hand.',
+       extra:'Self-draw only, so 自摸 is added as well.'},
+      {id:'haidi', group:'win', zh:'海底撈月', en:'Last tile', fan:1, needs:'self',
+       desc:'You win on the very last tile drawn from the wall.',
+       extra:'Self-draw only, so 自摸 is added as well.'},
+      {id:'huashang', group:'win', zh:'花上自摸', en:'Win on a flower', fan:1, needs:'self',
+       desc:'You draw a flower, and the replacement tile completes your hand.',
+       extra:'Self-draw only. Not every table plays this one.'},
+
+      {id:'pinghu', group:'shape', zh:'平糊', en:'All chows', fan:1, excl:['duidui','hunyaojiu'],
+       desc:'Four chows (runs of three) and a pair. No pungs or kongs.', ex:'123m 456m 234p 678s 55p'},
+      {id:'duidui', group:'shape', zh:'對對糊', en:'All pungs', fan:3,
+       desc:'Four pungs or kongs and a pair. No chows.', ex:'222m 555p 111p 777s 33s'},
+      {id:'hunyise', group:'shape', zh:'混一色', en:'Mixed one suit', fan:3, excl:['qingyise'],
+       desc:'Tiles from one suit only, plus winds or dragons.', ex:'123m 345m 888m SSS FF'},
+      {id:'qingyise', group:'shape', zh:'清一色', en:'Full flush', fan:7,
+       desc:'Every tile from the same suit. No winds or dragons.', ex:'123p 345p 567p 888p 99p'},
+      {id:'hunyaojiu', group:'shape', zh:'混么九', en:'Mixed terminals', fan:1, implies:['duidui'],
+       desc:'Only 1s, 9s, winds and dragons, all in pungs.', ex:'111m 999p 999s EEE CC',
+       extra:'Ticking it also ticks 對對糊, 4 fan for the two together. Also called 花么九.'},
+
+      {id:'dragon', group:'honour', zh:'箭刻', en:'Dragon pung (中 發 白)', fan:1, max:2, excl:['xiaosanyuan','dasanyuan'],
+       desc:'A pung or kong of 中, 發 or 白. 1 fan for each one.', ex:'CCC',
+       extra:'With two dragon pungs and a pair of the third, use 小三元 instead.'},
+      {id:'seatwind', group:'honour', zh:'門風', en:'Seat wind pung', fan:1,
+       desc:'A pung or kong of your own seat wind. The table screen shows each player\'s wind.', ex:'SSS',
+       extra:'Example shown for the South seat.'},
+      {id:'roundwind', group:'honour', zh:'圈風', en:'Round wind pung', fan:1,
+       desc:'A pung or kong of the round wind.', ex:'EEE',
+       extra:'If the round wind is also your seat wind, tick both for 2 fan.'},
+      {id:'xiaosanyuan', group:'honour', zh:'小三元', en:'Little three dragons', fan:5, excl:['dasanyuan'],
+       desc:'Pungs of two dragons and a pair of the third.', ex:'CCC FFF PP 123m 456s',
+       extra:'The 5 fan already covers the two dragon pungs.'},
+      {id:'dasanyuan', group:'honour', zh:'大三元', en:'Big three dragons', fan:8,
+       desc:'Pungs of all three dragons.', ex:'CCC FFF PPP 123m 55s',
+       extra:'The 8 fan already covers the dragon pungs.'},
+      {id:'xiaosixi', group:'honour', zh:'小四喜', en:'Little four winds', fan:6,
+       desc:'Pungs of three winds and a pair of the fourth.', ex:'EEE SSS WWW NN 123m',
+       extra:'Some tables play this as a limit hand. If yours does, add fan with the house adjustment.'},
+
+      {id:'wuhua', group:'flower', zh:'無花', en:'No flowers', fan:1, excl:['zhenghua','yitaihua','qihua','bahua'],
+       desc:'You hold no flower or season tiles at all.'},
+      {id:'zhenghua', group:'flower', zh:'正花', en:'Own flower', fan:1, max:2,
+       desc:'A flower or season whose number matches your seat: East 1, South 2, West 3, North 4.',
+       extra:'Up to two: one flower and one season.'},
+      {id:'yitaihua', group:'flower', zh:'一台花', en:'Set of four flowers', fan:2,
+       desc:'All four flowers (梅 蘭 菊 竹) or all four seasons (春 夏 秋 冬).',
+       extra:'Your own flower inside the set still counts as 正花.'},
+      {id:'qihua', group:'flower', zh:'七隻花', en:'Seven flowers (花糊)', fan:3, excl:['bahua'],
+       desc:'You have collected seven of the eight flower tiles. You may claim the win at once.'},
+
+      {id:'shisanyao', group:'limit', zh:'十三么', en:'Thirteen orphans', fan:'limit',
+       desc:'One each of every 1, 9, wind and dragon, plus a second copy of any one of them.', ex:'19m 19p 19s ESWN CFP C'},
+      {id:'jiulian', group:'limit', zh:'九子連環', en:'Nine gates', fan:'limit',
+       desc:'1112345678999 in one suit, all concealed, plus one more tile of that suit.', ex:'1112345678999m 5m'},
+      {id:'kankan', group:'limit', zh:'坎坎糊', en:'Four concealed pungs', fan:'limit',
+       desc:'Four pungs that you drew yourself, none claimed from a discard. Also called 四暗刻.', ex:'222m 666m 444p 888s 55p'},
+      {id:'dasixi', group:'limit', zh:'大四喜', en:'Big four winds', fan:'limit',
+       desc:'Pungs of all four winds.', ex:'EEE SSS WWW NNN 55m'},
+      {id:'ziyise', group:'limit', zh:'字一色', en:'All honours', fan:'limit',
+       desc:'Only winds and dragons.', ex:'EEE WWW CCC FFF NN'},
+      {id:'qingyaojiu', group:'limit', zh:'清么九', en:'All terminals', fan:'limit',
+       desc:'Only 1s and 9s.', ex:'111m 999m 111p 999s 11s'},
+      {id:'shiba', group:'limit', zh:'十八羅漢', en:'Four kongs', fan:'limit',
+       desc:'Four kongs and a pair, 18 tiles in all.'},
+      {id:'tianhu', group:'limit', zh:'天糊', en:'Heavenly hand', fan:'limit', needs:'self',
+       desc:'The dealer wins with the first 14 tiles dealt. Record as self-draw.'},
+      {id:'dihu', group:'limit', zh:'地糊', en:'Earthly hand', fan:'limit', needs:'discard',
+       desc:'A player wins off the dealer\'s very first discard.'},
+      {id:'bahua', group:'limit', zh:'八隻花', en:'Eight flowers (大花糊)', fan:'limit',
+       desc:'You have collected all eight flower tiles.'}
+    ],
+    // who pays what for one winning hand. Returns {base, deltas:{playerId: points}}
+    settle({fan, winner, from, seats}, o){
+      const base = this.baseByFan[Math.min(fan, this.baseByFan.length - 1)];
+      const d = {}; seats.forEach(p => d[p] = 0);
+      const losers = seats.filter(p => p !== winner);
+      if (!from) losers.forEach(p => d[p] = -2 * base);
+      else if (o.discardPay === 'full') d[from] = -4 * base;
+      else losers.forEach(p => d[p] = (p === from ? -2 : -1) * base);
+      d[winner] = -losers.reduce((s, p) => s + d[p], 0);
+      return {base, deltas: d};
+    },
+    // dealer keeps the deal after winning or after a drawn hand
+    dealerStays(hand, dealerId){ return hand.kind === 'draw' || hand.winner === dealerId; }
+  }
+};
+const DEFAULT_RULESET = 'hk';
+
+/* ============================ state ============================ */
+const KEY = 'mahjong-score-table-v1';
+let lbSort = 'pts';
+let state, draft = null, sheetOpen = false, seatDraft = null, focusRule = null, toastTimer = null, dlgYes = null;
+
+function freshState(){
+  const players = [1,2,3,4,5].map(n => ({id:'p'+n, name:'Player '+n}));
+  const s = {v:1, money:0, ruleset:DEFAULT_RULESET, opts:{}, players, nextId:6, example:true,
+    games:[{id:1, seats:players.slice(0,4).map(p => p.id), hands:[]}]};
+  return s;
+}
+function fixState(s){
+  if (!s || !Array.isArray(s.players) || !Array.isArray(s.games) || !s.games.length) return freshState();
+  if (!RULESETS[s.ruleset]) s.ruleset = DEFAULT_RULESET;
+  s.opts = s.opts && typeof s.opts === 'object' ? s.opts : {};
+  if (typeof s.money !== 'number') s.money = 0;
+  // shared scores come from other people's phones, so tidy them before use
+  const id = x => String(x).replace(/[^\w-]/g, '');
+  s.players.forEach(p => { p.id = id(p.id); p.name = String(p.name).slice(0, 24); });
+  for (const g of s.games) {
+    if (!Array.isArray(g.seats) || g.seats.length !== 4 || !Array.isArray(g.hands)) return freshState();
+    g.seats = g.seats.map(id);
+    g.hands.forEach(h => {
+      h.fan = Number(h.fan) || 0; h.round = (Number(h.round) || 0) % 4;
+      h.winner = id(h.winner || ''); h.from = h.from ? id(h.from) : null;
+      const d = {}; for (const k in (h.deltas || {})) d[id(k)] = Number(h.deltas[k]) || 0; h.deltas = d;
+      if (!Array.isArray(h.lines)) h.lines = [];
+    });
+  }
+  return s;
+}
+function load(){ try { return fixState(JSON.parse(localStorage.getItem(KEY))); } catch(e){ return freshState(); } }
+function keep(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+function save(){ keep(); if (sync.mode === 'live' && !ro()) { dirty = true; flush(); } }
+
+/* ============================ shared scores ============================
+   One shared document holds the whole score sheet. Everyone with the page
+   open gets it live; people who may not write see a view-only table.
+   Without it (page opened outside Claude, or not signed in) scores stay
+   on this phone. */
+const sync = {hosted:!!(window.claude && window.claude.use), mode:'local', canWrite:null, exists:false, slow:false, lost:false, shown:null, last:null};
+let ref = null, writing = false, dirty = false, slowTimer = null;
+const ro = () => sync.mode === 'live' && sync.canWrite === false;
+const RO_OK = new Set(['lbSort','copy','dlgNo']);
+function refresh(){ render(); if (sheetOpen && draft) renderHand(true); }
+function adopt(d){
+  sync.shown = d.stamp;
+  state = fixState(JSON.parse(JSON.stringify(d.state)));
+  keep();
+  if (draft && !game().seats.includes(draft.winner)) { draft = null; closeHand(); }
+}
+async function flush(){
+  if (writing || !dirty || !ref) return;
+  writing = true; dirty = false;
+  const first = !sync.exists, stamp = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  sync.shown = stamp;
+  try {
+    await ref.set({stamp, at:new Date().toISOString(), state:JSON.parse(JSON.stringify(state))});
+    sync.exists = true; if (first) refresh();
+  } catch(e){
+    if (e && e.code === 'invalid_argument' && sync.canWrite !== true) {
+      sync.canWrite = false; if (sync.last) adopt(sync.last);
+      toast('You can watch the scores here. Only the scorekeeper can change them.');
+    } else toast('Could not save to the shared scores. This phone still has them.');
+    refresh();
+  }
+  writing = false; if (dirty) flush();
+}
+function onSnap(snap){
+  const before = sync.mode + sync.exists + sync.slow;
+  if (!snap.metadata || !snap.metadata.fromCache) { clearTimeout(slowTimer); sync.slow = false; }
+  sync.mode = 'live';
+  let changed = false;
+  if (snap.exists) {
+    const d = snap.data(); sync.exists = true;
+    if (d && d.state) {
+      if (!snap.metadata || !snap.metadata.hasPendingWrites) sync.last = d;
+      if (d.stamp !== sync.shown) { adopt(d); changed = true; }
+    }
+  } else sync.exists = false;
+  if (changed || before !== sync.mode + sync.exists + sync.slow) refresh();
+}
+async function connect(){
+  if (!sync.hosted) return;
+  sync.mode = 'connecting'; render();
+  let db = null;
+  try { db = await window.claude.use('db'); } catch(e){}
+  if (!db) { sync.mode = 'local'; render(); return; }
+  try { const u = await window.claude.use('user'); if (u) sync.canWrite = await u.can('data.write'); } catch(e){}
+  try { ref = db.doc('tables/main'); } catch(e){ sync.mode = 'local'; render(); return; }
+  slowTimer = setTimeout(() => { sync.slow = true; render(); }, 10000);
+  ref.onSnapshot(onSnap, () => { clearTimeout(slowTimer); ref = null; sync.mode = 'local'; sync.lost = true; refresh(); });
+}
+function syncLine(){
+  if (sync.mode === 'connecting') return ['', 'Connecting to shared scores\u2026'];
+  if (sync.mode === 'live') {
+    if (sync.slow) return ['warn', 'Shared scores cannot be reached yet. This may be out of date.'];
+    if (!sync.exists) return ['warn', ro() ? 'No shared scores yet' : 'Not shared yet. Scores are on this phone only.'];
+    return ['live', ro() ? 'Live scores, view only' : 'Live. Everyone with the page sees these scores.'];
+  }
+  if (sync.lost) return ['warn', 'Lost the shared scores. Changes stay on this phone.'];
+  return ['', sync.hosted ? 'Scores on this phone only. Sign in to Claude to see the shared table.' : 'Scores saved on this phone only'];
+}
+
+const R = () => RULESETS[state.ruleset];
+function O(){
+  const r = R(), o = state.opts[r.id] = state.opts[r.id] || {};
+  r.options.forEach(op => { if (!op.choices.some(c => c[0] === o[op.key])) o[op.key] = op.def; });
+  return o;
+}
+const game = () => state.games[state.games.length - 1];
+const player = id => state.players.find(p => p.id === id);
+const pname = id => (player(id) || {name:'?'}).name;
+const active = () => state.players.filter(p => !p.gone);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const signed = n => n > 0 ? '+' + n : n < 0 ? '−' + (-n) : '0';
+const cash = n => '£' + (n * state.money / 100).toFixed(2);
+const cashSigned = n => (n < 0 ? '−' : n > 0 ? '+' : '') + cash(Math.abs(n));
+const cls = n => n > 0 ? 'up' : n < 0 ? 'down' : '';
+const pat = id => R().patterns.find(p => p.id === id);
+
+function tableState(g){
+  let d = 0, passes = 0;
+  for (const h of g.hands) if (!R().dealerStays(h, g.seats[d])) { d = (d + 1) % 4; passes++; }
+  return {dealer:d, round:Math.floor(passes / 4) % 4, handNo:g.hands.length + 1};
+}
+function gameTotals(g){ const t = {}; g.seats.forEach(p => t[p] = 0); g.hands.forEach(h => { for (const p in h.deltas) t[p] = (t[p] || 0) + h.deltas[p]; }); return t; }
+function allTotals(){ const t = {}; state.games.forEach(g => { const gt = gameTotals(g); for (const p in gt) t[p] = (t[p] || 0) + gt[p]; }); return t; }
+function settleUp(tot){
+  const pos = [], neg = [], out = [];
+  for (const p in tot) { if (tot[p] > 0) pos.push([p, tot[p]]); else if (tot[p] < 0) neg.push([p, -tot[p]]); }
+  pos.sort((a, b) => b[1] - a[1]); neg.sort((a, b) => b[1] - a[1]);
+  let i = 0, j = 0;
+  while (i < neg.length && j < pos.length) {
+    const x = Math.min(neg[i][1], pos[j][1]);
+    out.push({from:neg[i][0], to:pos[j][0], n:x});
+    neg[i][1] -= x; pos[j][1] -= x;
+    if (!neg[i][1]) i++; if (!pos[j][1]) j++;
+  }
+  return out;
+}
+
+/* ============================ scoring a hand ============================ */
+function conflicts(id){
+  const set = new Set(pat(id).excl || []);
+  R().patterns.forEach(q => { if ((q.excl || []).includes(id)) set.add(q.id); });
+  return set;
+}
+function allowed(p, d){
+  if (!p.needs) return true;
+  if (!d.from) return true;
+  return p.needs === 'self' ? d.from === 'self' : d.from !== 'self';
+}
+function scoreDraft(d){
+  const r = R(), o = O(), lines = [];
+  let total = 0, limit = false;
+  if (d.from === 'self') { lines.push({zh:r.selfDraw.zh, fan:r.selfDraw.fan, n:1}); total += r.selfDraw.fan; }
+  r.patterns.forEach(p => {
+    const n = d.picks[p.id] || 0; if (!n) return;
+    if (p.fan === 'limit') { limit = true; lines.push({zh:p.zh, fan:'limit', n:1}); }
+    else { total += p.fan * n; lines.push({zh:p.zh, fan:p.fan, n}); }
+  });
+  total += d.adj;
+  const fan = limit ? o.limitFan : Math.max(0, Math.min(total, o.limitFan));
+  return {fan, raw:total, limit, capped:!limit && total > o.limitFan, lines, ok:!!d.from && (limit || fan >= o.minFan)};
+}
+
+/* ============================ tiles ============================ */
+const CN = ['','一','二','三','四','五','六','七','八','九'];
+const HON = {E:'東',S:'南',W:'西',N:'北',C:'中',F:'發',P:'白'};
+const SUIT = {m:'萬',p:'筒',s:'索'};
+function tilesHTML(ex){
+  const groups = ex.split(' ').map(tok => {
+    const m = tok.match(/^(\d+)([mps])$/);
+    const ts = m
+      ? [...m[1]].map(n => `<span class="tile t-${m[2]}"><b>${m[2] === 'm' ? CN[n] : n}</b><i>${SUIT[m[2]]}</i></span>`)
+      : [...tok].map(c => `<span class="tile t-h t-${c}"><b>${c === 'P' ? '' : HON[c]}</b></span>`);
+    return `<span class="tg">${ts.join('')}</span>`;
+  });
+  const label = ex.split(' ').map(tok => { const m = tok.match(/^(\d+)([mps])$/); return m ? m[1] + SUIT[m[2]] : [...tok].map(c => HON[c]).join(''); }).join(', ');
+  return `<div class="tiles" role="img" aria-label="Example: ${label}">${groups.join('')}</div>`;
+}
+const fanLabel = f => f === 'limit' ? '爆棚' : f + '番';
+
+/* ============================ views ============================ */
+const $ = id => document.getElementById(id);
+function currentView(){ const h = location.hash.slice(1); return ['table','leaderboard','history','rules','setup'].includes(h) ? h : 'table'; }
+
+function render(){
+  const v = currentView(), r = R(), o = O();
+  document.querySelectorAll('.nav a').forEach(a => a.dataset.tab === v ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
+  $('ruleline').textContent = `${r.label} · ${o.minFan}番起糊 · ${o.limitFan}番爆棚`;
+  const sl = syncLine(); $('syncline').className = 'sync ' + sl[0]; $('syncline').textContent = sl[1];
+  document.body.classList.toggle('ro', ro());
+  $('resume').innerHTML = draft && !sheetOpen
+    ? `<div class="resume"><span>Hand in progress: <b>${esc(pname(draft.winner))}</b> wins</span><button data-a="resumeHand">Back to hand</button></div>` : '';
+  $('view').innerHTML = ({table:viewTable, leaderboard:viewLeaderboard, history:viewHistory, rules:viewRules, setup:viewSetup})[v]();
+  if (ro()) $('view').querySelectorAll('input,select').forEach(e => e.disabled = true);
+  if (v === 'rules' && focusRule) {
+    const el = $('pat-' + focusRule);
+    if (el) { el.classList.add('focus'); el.scrollIntoView({block:'start'}); }
+    focusRule = null;
+  }
+}
+
+function viewTable(){
+  const r = R(), g = game(), ts = tableState(g), gt = gameTotals(g), tot = allTotals();
+  const seats = g.seats.map((pid, i) => {
+    const w = r.winds[(i - ts.dealer + 4) % 4];
+    return `<button class="seat pos-${i}" data-a="win" data-p="${pid}" aria-label="${esc(pname(pid))}, ${w.en} seat, ${signed(gt[pid])} points. Tap if this player won.">
+      ${i === ts.dealer ? '<span class="zhuang" title="Dealer">莊</span>' : ''}
+      <span class="wind">${w.zh}</span><span class="who">${esc(pname(pid))}</span><span class="pts ${cls(gt[pid])}">${signed(gt[pid])}</span></button>`;
+  }).join('');
+  const nHands = state.games.reduce((n, x) => n + x.hands.length, 0);
+  const top = Object.keys(tot).sort((x, y) => tot[y] - tot[x])[0];
+  const rw = r.winds[ts.round];
+  return `
+    ${sync.mode === 'live' && !sync.exists ? (ro()
+      ? '<p class="note">The scorekeeper has not shared any scores yet. The table below is only an example.</p>'
+      : '<div class="resume"><span>These scores are on this phone only so far.</span><button data-a="shareNow">Share them</button></div>') : ''}
+    ${ro() && sync.exists ? '<p class="note">You are watching live. Only the scorekeeper can record hands.</p>' : ''}
+    ${state.example ? '<p class="note eo">These are example names. Rename or add players in Setup, then choose who sits where.</p>' : ''}
+    <div class="status"><span><b>Game ${state.games.length}</b></span><span>Round wind <b>${rw.zh} ${rw.en}</b></span><span>Dealer <b>${esc(pname(g.seats[ts.dealer]))}</b></span></div>
+    <div class="felt">${seats}
+      <div class="centre"><span class="round">${rw.zh}圈</span><span class="hand">Hand ${ts.handNo}</span><button class="eo" data-a="drawHand">流局 Draw</button></div>
+    </div>
+    <p class="hint eo">Tap the player who won the hand.</p>
+    <div class="row eo">
+      <button class="btn grow" data-a="openSeats">Change seats / new game</button>
+      <button class="btn" data-a="undoAsk" ${g.hands.length ? '' : 'disabled'}>Undo last hand</button>
+    </div>
+    <a class="card leadlink" href="#leaderboard"><span class="who">${nHands && tot[top] > 0
+      ? `<span class="sub">Leading after ${nHands} hand${nHands > 1 ? 's' : ''}</span><span><b>${esc(pname(top))}</b> <b class="amt up">${signed(tot[top])}</b></span>`
+      : '<span class="sub">Nobody is ahead yet</span><span><b>Leaderboard</b></span>'}</span><span class="go">Leaderboard \u203A</span></a>`;
+}
+
+/* ============================ leaderboard ============================ */
+function playerStats(){
+  const st = {}, mk = id => st[id] = st[id] || {id, pts:0, played:0, wins:0, zimo:0, dealin:0, best:0};
+  active().forEach(p => mk(p.id));
+  state.games.forEach(g => g.hands.forEach(h => {
+    g.seats.forEach(p => { const x = mk(p); x.played++; x.pts += h.deltas[p] || 0; });
+    if (h.kind !== 'win') return;
+    const w = mk(h.winner); w.wins++; if (!h.from) w.zimo++; if (h.fan > w.best) w.best = h.fan;
+    if (h.from) mk(h.from).dealin++;
+  }));
+  return Object.values(st).map(x => ({...x, rate:x.played ? x.wins / x.played : 0}));
+}
+function viewLeaderboard(){
+  const seated = new Set(game().seats), tot = allTotals(), pays = settleUp(tot);
+  const key = {pts:'pts', wins:'wins', rate:'rate'}[lbSort] || 'pts';
+  const list = playerStats().sort((a, b) => b[key] - a[key] || b.pts - a.pts || b.played - a.played);
+  const max = Math.max(1, ...list.map(x => Math.abs(x.pts)));
+  const rows = list.map((x, i) => `<li class="${i === 0 && x.played ? 'first' : ''}">
+    <span class="rk">${i + 1}</span>
+    <span class="nm">${esc(pname(x.id))}${seated.has(x.id) ? '<span class="tag">at table</span>' : ''}</span>
+    <span class="amt tot ${cls(x.pts)}">${signed(x.pts)}</span>
+    <span class="bar" aria-hidden="true">${x.pts ? `<i class="${cls(x.pts)}" style="width:${(Math.abs(x.pts) / max * 50).toFixed(1)}%"></i>` : ''}</span>
+    <span class="st">${x.played
+      ? `${state.money > 0 ? `<span><b>${cashSigned(x.pts)}</b></span>` : ''}<span>Won <b>${x.wins}</b> of <b>${x.played}</b> hands (${Math.round(x.rate * 100)}%)</span><span>自摸 <b>${x.zimo}</b></span><span>出銃 <b>${x.dealin}</b></span><span>Best <b>${x.best ? x.best + '番' : '\u2013'}</b></span>`
+      : '<span>No hands played yet</span>'}</span></li>`).join('');
+  const chip = (k, label) => `<button class="chip" data-a="lbSort" data-k="${k}" aria-pressed="${key === k}">${label}</button>`;
+  return `
+    <section class="card"><h2><span class="zh">排行榜</span>Leaderboard</h2>
+      <p class="sub">Every game so far. 出銃 counts how often a player discarded the winning tile.</p>
+      <div class="chips" role="group" aria-label="Rank by">${chip('pts', 'Points')}${chip('wins', 'Hands won')}${chip('rate', 'Win rate')}</div>
+      <ol class="lb">${rows}</ol>
+    </section>
+    <section class="card"><h2>Settle up</h2>
+      ${pays.length ? `<ul class="list">${pays.map(x => `<li><span class="name"><b>${esc(pname(x.from))}</b> pays <b>${esc(pname(x.to))}</b></span><span class="amt num">${state.money > 0 ? cash(x.n) + ' <small class="sub">' + x.n + ' pts</small>' : x.n}</span></li>`).join('')}</ul>` : '<p class="sub">Nobody owes anything yet.</p>'}
+      <div class="row"><button class="btn" data-a="copy">Copy scores as text</button></div>
+    </section>`;
+}
+
+function handRowHTML(h, n, r){
+  const head = h.kind === 'draw'
+    ? `<span class="zh">流局</span><span>Draw, no winner</span>`
+    : `<b>${esc(pname(h.winner))}</b><span>${h.from ? 'off ' + esc(pname(h.from)) : '自摸 self-draw'}</span><span class="fanpill ${h.limit ? 'limit' : ''}">${h.limit ? '爆棚 ' : ''}${Number(h.fan)}番</span>`;
+  const deltas = h.kind === 'draw' ? '' : `<div class="deltas num">${Object.keys(h.deltas).filter(p => h.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(h.deltas[p])}">${signed(h.deltas[p])}</b></span>`).join('')}</div>`;
+  return `<div class="hand-row"><div class="hand-head"><span class="no">#${n} ${r.winds[h.round].zh}圈</span>${head}</div>
+    ${h.lines && h.lines.length ? `<div class="sub zh">${h.lines.map(esc).join(' · ')}</div>` : ''}${deltas}</div>`;
+}
+function viewHistory(){
+  const r = R();
+  const games = state.games.map((g, gi) => ({g, gi})).reverse().map(({g, gi}) => {
+    const seatLine = g.seats.map((p, i) => `${r.winds[i].zh} ${esc(pname(p))}`).join(' · ');
+    const gt = gameTotals(g);
+    const hands = g.hands.map((h, i) => handRowHTML(h, i + 1, r)).reverse().join('');
+    return `<section class="card"><h2>Game ${gi + 1}</h2><p class="sub">Starting seats: ${seatLine}</p>
+      <div class="deltas num">${g.seats.map(p => `<span>${esc(pname(p))} <b class="amt ${cls(gt[p])}">${signed(gt[p])}</b></span>`).join('')}</div>
+      ${hands || '<p class="sub">No hands recorded yet.</p>'}</section>`;
+  }).join('');
+  return `${games}<div class="row eo"><button class="btn" data-a="undoAsk" ${game().hands.length ? '' : 'disabled'}>Undo last hand</button></div>`;
+}
+
+function payRows(){
+  const r = R(), o = O(), rows = [];
+  for (let f = o.minFan; f <= o.limitFan; f++) {
+    const a = r.settle({fan:f, winner:'a', from:null, seats:['a','b','c','d']}, o).deltas;
+    const b = r.settle({fan:f, winner:'a', from:'b', seats:['a','b','c','d']}, o).deltas;
+    rows.push(`<tr><td><b>${f}番</b>${f === o.limitFan ? ' 爆棚' : ''}</td><td>${-a.b}</td><td>${a.a}</td><td>${-b.b}</td><td>${-b.c}</td><td>${b.a}</td></tr>`);
+  }
+  return rows.join('');
+}
+function ruleCard(p){
+  return `<article class="card rule-card" id="pat-${p.id}">
+    <div class="rule-head"><span class="zh">${p.zh}</span><span class="en">${esc(p.en)}</span><span class="fanpill ${p.fan === 'limit' ? 'limit' : ''}">${fanLabel(p.fan)}${p.max > 1 ? ' each' : ''}</span></div>
+    <p>${esc(p.desc)}</p>${p.ex ? tilesHTML(p.ex) : ''}${p.extra ? `<p class="extra">${esc(p.extra)}</p>` : ''}</article>`;
+}
+function viewRules(){
+  const r = R(), o = O();
+  const groups = r.groups.map(g => {
+    const ps = (g.id === r.selfDraw.group ? [r.selfDraw] : []).concat(r.patterns.filter(p => p.group === g.id));
+    return `<div class="grp-h"><span class="zh">${g.zh}</span><span>${g.en}</span></div>${ps.map(ruleCard).join('')}`;
+  }).join('');
+  return `
+    <section class="card"><h2>${esc(r.label)} scoring</h2>
+      <p class="sub">Add up the fan of every 牌型 in the winning hand. A hand needs ${o.minFan} fan to win and stops counting at ${o.limitFan}. ${o.discardPay === 'full' ? 'The discarder pays for all three losers (全銃).' : 'The discarder pays double and the other two pay single (半銃).'} Change these in Setup.</p>
+      <div style="overflow-x:auto"><table class="paytable">
+        <thead><tr><th>Fan</th><th>自摸<br>each pays</th><th>自摸<br>winner</th><th>Discarder<br>pays</th><th>Others<br>pay</th><th>Winner<br>gets</th></tr></thead>
+        <tbody>${payRows()}</tbody></table></div>
+    </section>${groups}`;
+}
+
+function moneyExample(){
+  if (!(state.money > 0)) return 'Set this and the Leaders page shows pounds next to the points.';
+  const r = R(), o = O(), seats = ['a','b','c','d'];
+  const lo = r.settle({fan:o.minFan, winner:'a', from:'b', seats}, o).deltas;
+  const hi = r.settle({fan:o.limitFan, winner:'a', from:'b', seats}, o).deltas;
+  const hs = r.settle({fan:o.limitFan, winner:'a', from:null, seats}, o).deltas;
+  return `With these rules: a ${o.minFan} fan hand off a discard costs the discarder ${cash(-lo.b)}. A limit hand (${o.limitFan} fan) costs the discarder ${cash(-hi.b)}, or ${cash(-hs.b)} each on a self-draw.`;
+}
+function viewSetup(){
+  const r = R(), o = O(), tot = allTotals();
+  const pls = active().map(p => `<div class="pl"><input id="name-${p.id}" data-p="${p.id}" class="pname" value="${esc(p.name)}" maxlength="24" aria-label="Player name"><button class="eo" data-a="removePlayer" data-p="${p.id}">Remove</button></div>`).join('');
+  const opts = r.options.map(op => `<div class="field"><label for="opt-${op.key}">${op.label}</label>
+    <select id="opt-${op.key}" data-opt="${op.key}">${op.choices.map(c => `<option value="${c[0]}" ${o[op.key] === c[0] ? 'selected' : ''}>${c[1]}</option>`).join('')}</select></div>`).join('');
+  return `
+    <section class="card"><h2>Players</h2><p class="sub">Add everyone who might play tonight. Four sit at the table each game.</p>
+      ${pls}
+      <div class="pl eo"><input id="newname" placeholder="New player name" maxlength="24" aria-label="New player name"><button data-a="addPlayer">Add</button></div>
+      <div class="row eo"><button class="btn primary grow" data-a="openSeats">Choose seats for a game</button></div>
+    </section>
+    <section class="card"><h2>Rules</h2>
+      <div class="field"><label for="ruleset">Rule set</label>
+        <select id="ruleset">${Object.values(RULESETS).map(x => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${x.label}</option>`).join('')}</select></div>
+      ${opts}
+      <p class="sub">Changes apply to hands recorded from now on. Earlier hands keep their points.</p>
+    </section>
+    <section class="card"><h2>Money</h2>
+      <div class="field"><label for="ppp">Pence per point (leave empty to count points only)</label>
+        <input id="ppp" type="number" inputmode="decimal" min="0" step="0.5" value="${state.money || ''}" placeholder="for example 5"></div>
+      <p class="sub">${moneyExample()}</p>
+    </section>
+    <section class="card eo"><h2>Start over</h2><p class="sub">This clears the scores for everyone who shares this table. Use Copy scores on the Leaders page first to keep a record.</p>
+      <div class="row"><button class="btn danger" data-a="resetAsk">Clear all scores</button></div>
+    </section>`;
+}
+
+/* ============================ hand sheet ============================ */
+function renderHand(keepScroll){
+  const el = $('handsheet'), r = R(), o = O(), g = game(), d = draft;
+  const old = el.querySelector('.sheet-body'), top = keepScroll && old ? old.scrollTop : 0;
+  const sc = scoreDraft(d);
+  const others = g.seats.filter(p => p !== d.winner);
+  const how = `<div class="chips">
+    <button class="chip" data-a="from" data-p="self" aria-pressed="${d.from === 'self'}"><span class="zh">自摸</span> Self-draw</button>
+    ${others.map(p => `<button class="chip" data-a="from" data-p="${p}" aria-pressed="${d.from === p}">Off ${esc(pname(p))}</button>`).join('')}</div>`;
+  const groups = r.groups.map(gr => {
+    const rows = r.patterns.filter(p => p.group === gr.id).map(p => {
+      const n = d.picks[p.id] || 0, ok = allowed(p, d);
+      const nm = `<span class="nm"><span class="zh">${p.zh}</span><small>${esc(p.en)}${ok ? '' : p.needs === 'self' ? ' · self-draw only' : ' · discard only'}</small></span>`;
+      const main = p.max > 1
+        ? `<div class="pat-main ${n ? 'on' : ''}">${nm}<span class="fan">${p.fan}番</span><span class="step"><button data-a="dec" data-id="${p.id}" ${n ? '' : 'disabled'} aria-label="One fewer ${p.zh}">−</button><output aria-label="${p.zh} count">${n}</output><button data-a="inc" data-id="${p.id}" ${n < p.max ? '' : 'disabled'} aria-label="One more ${p.zh}">+</button></span></div>`
+        : `<button class="pat-main" data-a="pick" data-id="${p.id}" aria-pressed="${!!n}" ${ok ? '' : 'disabled'}>${nm}<span class="fan">${fanLabel(p.fan)}</span></button>`;
+      return `<div class="pat">${main}<button class="info" data-a="info" data-id="${p.id}" aria-label="Explain ${p.zh}">i</button></div>`;
+    }).join('');
+    return `<div class="sec-h"><span class="zh">${gr.zh}</span>${gr.en}</div><div class="pats">${rows}</div>`;
+  }).join('');
+  let pays = '', why = '';
+  if (d.from) {
+    const st = r.settle({fan:sc.fan, winner:d.winner, from:d.from === 'self' ? null : d.from, seats:g.seats}, o);
+    pays = `<div class="pays num">${g.seats.filter(p => st.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(st.deltas[p])}">${signed(st.deltas[p])}</b></span>`).join('')}</div>`;
+  }
+  if (!d.from) why = 'Choose how the hand was won.';
+  else if (!sc.ok) why = `Needs ${o.minFan} fan to win. This hand has ${sc.fan}.`;
+  const parts = sc.lines.map(l => l.zh + (l.n > 1 ? '×' + l.n : '')).concat(d.adj ? ['adjust ' + signed(d.adj)] : []);
+  el.innerHTML = `
+    <div class="sheet-head"><h2 id="hs-title">${esc(pname(d.winner))} wins</h2><button data-a="cancelHand">Cancel</button></div>
+    <div class="sheet-body"><div class="sheet-in">
+      <div class="sec-h">How did ${esc(pname(d.winner))} win?</div>${how}
+      ${groups}
+      <div class="adj"><span><b>House adjustment</b><br><span class="sub">Extra fan your table counts that is not listed.</span></span>
+        <span class="step"><button data-a="adj" data-n="-1" aria-label="One fan less">−</button><output>${signed(d.adj)}</output><button data-a="adj" data-n="1" aria-label="One fan more">+</button></span></div>
+    </div></div>
+    <div class="sheet-foot"><div class="in">
+      <div class="sum"><span class="big">${sc.limit ? '爆棚 ' : ''}${sc.fan}番</span><span class="why">${parts.length ? esc(parts.join(' + ')) : 'Nothing ticked yet'}${sc.capped ? ` · ${sc.raw} fan, capped at ${o.limitFan}` : ''}</span></div>
+      ${pays}${why ? `<div class="warn">${why}</div>` : ''}
+      <button class="btn primary" data-a="record" ${sc.ok ? '' : 'disabled'}>Record hand</button>
+    </div></div>`;
+  el.hidden = false; sheetOpen = true;
+  if (top) el.querySelector('.sheet-body').scrollTop = top;
+}
+function closeHand(){ $('handsheet').hidden = true; sheetOpen = false; }
+
+/* ============================ seat sheet ============================ */
+function renderSeats(){
+  const r = R(), el = $('seatsheet'), g = game();
+  const sel = i => `<div class="seatpick"><span class="zh" aria-hidden="true">${r.winds[i].zh}</span><div class="field"><label for="seat-${i}">${r.winds[i].en}${i === 0 ? ' (first dealer)' : ''}</label>
+    <select id="seat-${i}" data-seat="${i}">${active().map(p => `<option value="${p.id}" ${seatDraft[i] === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>`;
+  el.innerHTML = `
+    <div class="sheet-head"><h2 id="ss-title">Who sits where</h2><button data-a="closeSeats">Cancel</button></div>
+    <div class="sheet-body"><div class="sheet-in">
+      <p class="sub">${g.hands.length ? 'This starts a new game. Scores from earlier games stay in the standings.' : 'No hands recorded in this game yet, so this just changes its seats.'} Picking someone who is already seated swaps the two.</p>
+      ${[0,1,2,3].map(sel).join('')}
+      <div class="row"><button class="btn grow" data-a="shuffleSeats">Shuffle these four</button>${active().length > 4 ? '<button class="btn grow" data-a="randomFour">Pick four at random</button>' : ''}</div>
+    </div></div>
+    <div class="sheet-foot"><div class="in"><button class="btn primary" data-a="startGame">${g.hands.length ? 'Start new game' : 'Set seats'}</button></div></div>`;
+  el.hidden = false;
+}
+function shuffle(a){ for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============================ toast + dialog ============================ */
+function toast(msg, undo){
+  const t = $('toast');
+  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button data-a="undoNow">Undo</button>' : ''}`;
+  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 6000);
+}
+function ask(msg, yes, fn){
+  dlgYes = fn;
+  $('dlg').innerHTML = `<div class="box"><p>${esc(msg)}</p><div class="row"><button class="btn grow" data-a="dlgNo">Keep it</button><button class="btn danger grow" data-a="dlgYes">${esc(yes)}</button></div></div>`;
+  $('dlg').hidden = false;
+}
+function undoLast(){ const g = game(); if (g.hands.length) { g.hands.pop(); save(); render(); } }
+
+/* ============================ actions ============================ */
+const A = {
+  lbSort(b){ lbSort = b.dataset.k; render(); },
+  shareNow(){ save(); toast('Shared. Everyone with the page now sees these scores.'); },
+  win(b){ draft = {winner:b.dataset.p, from:null, picks:{}, adj:0}; renderHand(false); render(); },
+  resumeHand(){ renderHand(false); render(); },
+  cancelHand(){ draft = null; closeHand(); render(); },
+  from(b){
+    draft.from = b.dataset.p;
+    R().patterns.forEach(p => { if (!allowed(p, draft)) delete draft.picks[p.id]; });
+    renderHand(true);
+  },
+  pick(b){
+    const id = b.dataset.id;
+    if (draft.picks[id]) delete draft.picks[id];
+    else { conflicts(id).forEach(x => delete draft.picks[x]); draft.picks[id] = 1; (pat(id).implies || []).forEach(x => { conflicts(x).forEach(y => { if (y !== id) delete draft.picks[y]; }); draft.picks[x] = 1; }); }
+    renderHand(true);
+  },
+  inc(b){ const id = b.dataset.id, p = pat(id); conflicts(id).forEach(x => delete draft.picks[x]); draft.picks[id] = Math.min(p.max, (draft.picks[id] || 0) + 1); renderHand(true); },
+  dec(b){ const id = b.dataset.id; const n = (draft.picks[id] || 0) - 1; if (n > 0) draft.picks[id] = n; else delete draft.picks[id]; renderHand(true); },
+  adj(b){ draft.adj = Math.max(-9, Math.min(13, draft.adj + Number(b.dataset.n))); renderHand(true); },
+  info(b){ focusRule = b.dataset.id; closeHand(); if (currentView() === 'rules') render(); else location.hash = '#rules'; },
+  record(){
+    const r = R(), o = O(), g = game(), ts = tableState(g), sc = scoreDraft(draft);
+    if (!sc.ok) return;
+    const from = draft.from === 'self' ? null : draft.from;
+    const st = r.settle({fan:sc.fan, winner:draft.winner, from, seats:g.seats}, o);
+    g.hands.push({kind:'win', winner:draft.winner, from, picks:{...draft.picks}, adj:draft.adj, fan:sc.fan, limit:sc.limit, base:st.base,
+      deltas:st.deltas, round:ts.round, dealer:g.seats[ts.dealer], lines:sc.lines.map(l => l.zh + (l.n > 1 ? '×' + l.n : ''))});
+    const msg = `${pname(draft.winner)} +${st.deltas[draft.winner]} (${sc.fan}番)`;
+    draft = null; closeHand(); save();
+    if (currentView() !== 'table') location.hash = '#table'; else render();
+    window.scrollTo(0, 0); toast(msg, true);
+  },
+  drawHand(){
+    const g = game(), ts = tableState(g), deltas = {}; g.seats.forEach(p => deltas[p] = 0);
+    g.hands.push({kind:'draw', deltas, round:ts.round, dealer:g.seats[ts.dealer], lines:[]});
+    save(); render(); toast('Hand recorded as a draw (流局). Dealer stays.', true);
+  },
+  undoNow(){ $('toast').hidden = true; undoLast(); },
+  undoAsk(){ ask('Remove the last recorded hand of this game?', 'Remove hand', undoLast); },
+  dlgNo(){ $('dlg').hidden = true; dlgYes = null; },
+  dlgYes(){ $('dlg').hidden = true; const f = dlgYes; dlgYes = null; if (f) f(); },
+  openSeats(){
+    if (active().length < 4) { toast('Add at least four players first.'); return; }
+    const ok = game().seats.filter(p => player(p) && !player(p).gone);
+    const rest = active().map(p => p.id).filter(p => !ok.includes(p));
+    seatDraft = ok.concat(rest).slice(0, 4); renderSeats();
+  },
+  closeSeats(){ $('seatsheet').hidden = true; seatDraft = null; },
+  shuffleSeats(){ shuffle(seatDraft); renderSeats(); },
+  randomFour(){ seatDraft = shuffle(active().map(p => p.id)).slice(0, 4); renderSeats(); },
+  startGame(){
+    const g = game();
+    if (g.hands.length) state.games.push({id:state.games.length + 1, seats:seatDraft.slice(), hands:[]});
+    else g.seats = seatDraft.slice();
+    seatDraft = null; $('seatsheet').hidden = true; save();
+    if (currentView() !== 'table') location.hash = '#table'; else render();
+    window.scrollTo(0, 0);
+  },
+  addPlayer(){
+    const inp = $('newname'), name = inp.value.trim();
+    if (!name) { inp.focus(); return; }
+    state.players.push({id:'p' + (state.nextId++), name}); state.example = false; save(); render(); $('newname').focus();
+  },
+  removePlayer(b){
+    const id = b.dataset.p, g = game();
+    if (g.seats.includes(id)) { toast(pname(id) + ' is seated in the current game. Change seats first.'); return; }
+    const used = state.games.some(x => x.seats.includes(id) && x.hands.length);
+    if (used) player(id).gone = true; else state.players = state.players.filter(p => p.id !== id);
+    save(); render();
+  },
+  copy(){
+    const tot = allTotals(), ids = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
+    const text = ['Mahjong scores (' + R().label + ')'].concat(ids.map(p => pname(p) + '  ' + signed(tot[p]) + (state.money > 0 ? '  ' + cashSigned(tot[p]) : '')), ['', 'Settle up:'],
+      settleUp(tot).map(x => `${pname(x.from)} pays ${pname(x.to)} ${state.money > 0 ? cash(x.n) : x.n}`)).join('\n');
+    try { navigator.clipboard.writeText(text).then(() => toast('Scores copied.'), () => toast('Copying is blocked here. Take a screenshot instead.')); }
+    catch(e){ toast('Copying is blocked here. Take a screenshot instead.'); }
+  },
+  resetAsk(){ ask('Clear every game and score? Players and rules stay.', 'Clear scores', () => {
+    state.games = [{id:1, seats:game().seats.slice(), hands:[]}]; draft = null; save(); render(); toast('Scores cleared.'); }); }
+};
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]');
+  if (!b || b.disabled || !A[b.dataset.a]) return;
+  if (ro() && !RO_OK.has(b.dataset.a)) { toast('Only the scorekeeper can change scores.'); return; }
+  A[b.dataset.a](b);
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (ro()) { render(); return; }
+  if (t.classList.contains('pname')) {
+    const p = player(t.dataset.p), v = t.value.trim();
+    if (p && v) { p.name = v; state.example = false; save(); render(); } else if (p) t.value = p.name;
+  } else if (t.dataset.opt) {
+    const op = R().options.find(x => x.key === t.dataset.opt), c = op.choices.find(x => String(x[0]) === t.value);
+    O()[op.key] = c[0]; save(); render();
+  } else if (t.id === 'ppp') {
+    state.money = Math.max(0, Number(t.value) || 0); save(); render();
+  } else if (t.id === 'ruleset') {
+    state.ruleset = t.value; draft = null; save(); render();
+  } else if (t.dataset.seat !== undefined) {
+    const i = Number(t.dataset.seat), j = seatDraft.indexOf(t.value);
+    if (j >= 0 && j !== i) seatDraft[j] = seatDraft[i];
+    seatDraft[i] = t.value; renderSeats();
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'newname') A.addPlayer(); });
+window.addEventListener('hashchange', () => { const keep = focusRule; render(); if (!keep) window.scrollTo(0, 0); });
+
+function start(data){
+  state = data && data.state ? fixState(data.state) : load();
+  draft = data && data.draft ? data.draft : null;
+  render();
+  connect();
+}
+const hot = window.claude && window.claude.hot;
+if (hot && hot.snapshot) hot.snapshot(() => ({state, draft}));
+if (hot && hot.ready) hot.ready(start); else start(hot && hot.data ? hot.data : {});
+</script>
+</body>
+</html>

@@ -733,6 +733,7 @@ function viewTable(){
       ? '<p class="note">Waiting for shared scores · 等待共享分數</p>'
       : '<div class="resume"><span>Saved on this device · 分數儲存在此裝置</span><button data-a="shareNow">Share 共享</button></div>') : ''}
     <section class="table-stage pov-stage" aria-label="Mahjong table · 麻將桌">
+      ${tableScene(g.seats, bottom)}
       <div class="scene-label"><b>Game ${String(state.games.length).padStart(2,'0')}</b><small>第 ${state.games.length} 場</small></div>
       <div class="scene-tools"><button class="view-chip" data-a="myView">My seat · 我的座位</button>
         <button class="expand-table" data-a="tableFocus" aria-pressed="${focus}" aria-label="${focus ? 'Exit full screen · 離開全螢幕' : 'Full screen · 全螢幕'}"><i aria-hidden="true"></i></button></div>

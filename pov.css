@@ -6,8 +6,14 @@
 .table-page .masthead .sync{font-size:.78rem}
 .table-page .wrap{padding-bottom:0}
 .table-page #tally{padding-top:5px;padding-bottom:5px;background:#f3efe2}
-.table-page .pov-stage{position:relative;display:block;min-height:490px;isolation:isolate;overflow:hidden;padding:0;box-shadow:none;background:#144636 url('pov-room.webp') center / 100% 100% no-repeat;color:#fbefce}
-.pov-stage::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#100b0629,transparent 28%,transparent 88%,#110b0a50)}
+.table-page .pov-stage{position:relative;display:block;min-height:490px;isolation:isolate;overflow:hidden;padding:0;box-shadow:none;background:#174735;color:#fbefce}
+.table-photo,.scene-plate,.scene-plate img{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.table-photo{z-index:-2}
+.scene-plate img{display:block;object-fit:fill}
+.scene-plate .mirrored{transform:scaleX(-1)}
+.scene-left{mask-image:linear-gradient(to right,#000 26%,transparent 36%)}
+.scene-right{mask-image:linear-gradient(to left,#000 26%,transparent 36%)}
+.pov-stage::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,#100b0629,transparent 28%,transparent 88%,#110b0a50)}
 .scene-label,.scene-tools{position:absolute;top:13px;z-index:3}
 .scene-label{left:clamp(13px,3vw,48px);display:flex;align-items:baseline;gap:8px;text-shadow:0 1px 6px #000}
 .scene-label b{font:italic 600 clamp(1.1rem,2vw,1.6rem) Georgia,serif}.scene-label small{font-size:.8rem}
@@ -103,3 +109,42 @@
 #penalty-preview:not(:empty) {margin:4px 0;border-block:1px solid #cabe9e;padding:9px 0}
 #penalty-preview .deltas {margin-top:5px}
 #penalty-dialog .row {justify-content:flex-end}
+
+/* Keep the far nameplate on the felt, just below the opposite player's hands. */
+@media (orientation:landscape) {
+  .pov-seats .pos-2{top:54%}
+  .table-photo[data-camera-seat=south] ~ .seat-ring .pos-2{top:42%}
+  .table-photo[data-camera-seat=west] ~ .seat-ring .pos-2{top:50%}
+  .table-photo[data-camera-seat=south] ~ .pov-centre{top:58%}
+  .pov-seats .pos-3{left:24%;top:60%}
+  .pov-seats .pos-1{left:76%;top:60%}
+  .pov-centre{top:64%;display:flex;align-items:center;gap:8px}
+  .wind-counter{width:clamp(64px,6vw,90px)}
+  .wind-counter b{font-size:clamp(1.6rem,2.3vw,2.2rem)}
+  .pov-seats.seat-ring .seat{padding:4px 10px}
+  .pov-seats .seat .wind-tile{height:clamp(31px,5.1vh,44px);width:clamp(27px,3vw,38px)}
+  .pov-seats .wind-tile b{font-size:clamp(1.18rem,2vw,1.65rem)}
+  .concealed-wall i{width:clamp(8px,.85vw,15px);height:clamp(15px,1.65vw,28px)}
+  .pov-seats .pos-0{top:74%}
+  .score-tiles{left:70%;right:auto;top:69%}
+  .hand-rack{bottom:2%}
+  .pov-hint{left:clamp(13px,3vw,48px);top:42px;bottom:auto;transform:none;text-shadow:0 1px 4px #000}
+}
+@media (orientation:landscape) and (max-height:650px) {
+  .table-page .pov-stage{min-height:265px}
+  .pov-seats .pos-0{top:66%}
+  .pov-seats .pos-2{top:49%}
+  .pov-centre,.table-photo[data-camera-seat=south] ~ .pov-centre{top:8%;left:42%;gap:5px}
+  .pov-centre .wind-counter{width:auto;aspect-ratio:auto;padding:2px 8px;display:flex;gap:3px;align-items:center;border-radius:4px;box-shadow:none}
+  .wind-counter b{font-size:1rem}.hand-counter{font-size:.7rem}
+  .score-tiles{top:68%;left:70%}
+  .score-tiles .command-tile{width:38px;min-height:34px}
+  .hand-rack .command-tile{height:48px}
+  .hand-rack .rack-bookend{--mj-tile-width:30px}
+  .hand-rack .rack-ledge{height:12px;margin-top:3px}
+}
+@media (orientation:portrait) and (min-aspect-ratio:2/3) {
+  .scene-plate img{object-fit:cover;object-position:center 4%}
+  .pov-seats .pos-2{top:45%}
+  .pov-centre{top:56%}
+}

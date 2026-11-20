@@ -87,6 +87,48 @@ const mySeat = (() => {
   return {ensure, show, bottom, join, remember, experienceField, get profile(){ load(); return profile; }};
 })();
 
+// Cast the two named people first. The other chairs keep their original character
+// when players swap seats or the dealer rotates.
+function seatedCharacters(seats) {
+  const cast = new Map(), available = new Set([0, 1, 2, 3]);
+  function assign(pid, role) {
+    if (!cast.has(pid) && available.delete(role)) cast.set(pid, role);
+  }
+  for (const pid of seats) {
+    const name = pname(pid).trim().toLowerCase();
+    if (name === 'sean') assign(pid, 0);
+    if (name === 'fleece' || name === 'fleece johnson') assign(pid, 1);
+  }
+  for (const pid of seats) assign(pid, ['p1','p2','p3','p4'].indexOf(pid));
+  for (const pid of seats) if (!cast.has(pid)) assign(pid, available.values().next().value);
+  return seats.map(pid => cast.get(pid));
+}
+
+function tableScene(seats, bottom) {
+  const cast = seatedCharacters(seats);
+  const cameras = ['east','south','west','north'];
+  // A plate shot from camera c shows cast (c + offset) % 4 at this position.
+  const cameraAt = offset => cameras[(cast[(bottom + offset) % 4] - offset + 4) % 4];
+  const centre = cameraAt(2), left = cameraAt(3), right = cameraAt(1);
+  const centreIndex = cameras.indexOf(centre);
+  const reverseLeft = cameras[(centreIndex + 2) % 4] === left;
+  const reverseRight = cameras[(centreIndex + 2) % 4] === right;
+  const reverse = Number(reverseLeft) + Number(reverseRight) >
+    Number(left === centre) + Number(right === centre);
+
+  function plate(camera, side, mirrored = false) {
+    return `<picture class="scene-plate ${side}">
+      <source media="(orientation: portrait)" srcset="scene-${camera}-phone.webp">
+      <img src="scene-${camera}.webp" alt="" draggable="false"${mirrored ? ' class="mirrored"' : ''}></picture>`;
+  }
+  // Normal and reversed seating each use a single photograph. Other permutations
+  // replace the one side that changed, keeping every face beside its actual name.
+  const layers = [plate(centre, 'scene-base', reverse)];
+  if (reverse ? !reverseLeft : left !== centre) layers.push(plate(left, 'scene-left'));
+  if (reverse ? !reverseRight : right !== centre) layers.push(plate(right, 'scene-right'));
+  return `<div class="table-photo" data-camera-seat="${centre}" aria-hidden="true">${layers.join('')}</div>`;
+}
+
 function commandTile(glyph, en, zh, target, options = {}) {
   const label = en + ' · ' + zh;
   const inside = `<i aria-hidden="true">${glyph}</i><b>${en}</b><small lang="zh-Hant">${zh}</small>`;

@@ -1,0 +1,1 @@
+ALTER TABLE score_tables ADD COLUMN arrivals TEXT NOT NULL DEFAULT '{}';

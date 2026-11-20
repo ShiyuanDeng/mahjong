@@ -10,7 +10,7 @@ const liveTable = (() => {
     ? 'https://mahjong-table-scores.loosebeaver2.chatgpt.site' : location.origin;
   let id = query.has('table') ? query.get('table') : storage.get(lastKey);
   const valid = value => typeof value === 'string' && /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/.test(value);
-  let revision = 0, token, pending, writing = false, reading = false, ready = false, online = false;
+  let revision = 0, seatsVersion = 0, token, pending, writing = false, reading = false, ready = false, online = false;
   let notice = '', storageError = false;
   const key = suffix => 'mahjong-room-' + id + '-' + suffix;
   const url = () => host + '/api/tables/' + id;
@@ -28,7 +28,7 @@ const liveTable = (() => {
     token = storage.get(key('editor'));
     pending = token && storage.get(key('pending'));
     const saved = storage.get(key('cache'));
-    revision = saved?.revision || 0;
+    revision = saved?.revision || 0; seatsVersion = saved?.seatsVersion || 0;
     return pending?.state || saved?.state || null;
   }
   function install(snapshot) {
@@ -42,14 +42,18 @@ const liveTable = (() => {
     reading = true;
     const before = revision;
     try {
-      const result = await fetch(url() + '?since=' + revision, {cache:'no-store', signal:AbortSignal.timeout(10000)});
+      const result = await fetch(url() + '?since=' + revision + '&seats=' + seatsVersion, {cache:'no-store', signal:AbortSignal.timeout(10000)});
       if (!result.ok) throw new Error(String(result.status));
       const data = await result.json();
       if (pending || writing || revision !== before) return;
       const changed = !online || !ready || !!data.state;
       if (data.state) {
-        install(data.state);
-        revision = data.revision; cache('cache', {revision, state});
+        if (data.revision === revision) {
+          // Only the seated names changed. Keep a scorekeeper's open hand or seating sheet.
+          state.players = fixState(data.state).players;
+        } else install(data.state);
+        revision = data.revision; seatsVersion = data.seatsVersion || 0;
+        cache('cache', {revision, seatsVersion, state});
       }
       online = ready = true;
       if (changed) redraw();
@@ -77,7 +81,7 @@ const liveTable = (() => {
         if (!response.ok) throw new Error(String(response.status));
         const result = await response.json();
         revision = result.revision; online = ready = true; notice = '';
-        cache('cache', {revision, state:pending.state}); pending = null; cache('pending', null);
+        cache('cache', {revision, seatsVersion, state:pending.state}); pending = null; cache('pending', null);
       }
     } catch (err) {
       online = false;
@@ -115,6 +119,12 @@ const liveTable = (() => {
     }
     history.replaceState(null, '', link()); saveChange(); start(); redraw();
   }
+  async function claimSeat(pid, name) {
+    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pid, name}), signal:AbortSignal.timeout(10000)});
+    if (!res.ok) { await read(); throw new Error(String(res.status)); }
+    await read();
+  }
   async function copyLink() {
     try { await navigator.clipboard.writeText(link().href); toast('Table link copied · 已複製觀戰連結'); }
     catch { window.prompt('Copy this table link · 請複製牌桌連結', link().href); }
@@ -129,11 +139,12 @@ const liveTable = (() => {
   }
   return {
     get active() { return id !== null && id !== undefined; },
+    get roomId() { return id || 'local'; },
     get viewer() { return !!id && !token; },
     get locked() { return this.active && (!token || !ready || !!pending); },
     get available() { return revision > 0 || !!pending; },
     get shareable() { return revision > 0; },
     get online() { return online; },
-    restore, start, create, copyLink, saveChange, status
+    restore, start, create, claimSeat, copyLink, saveChange, status
   };
 })();

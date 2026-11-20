@@ -265,6 +265,7 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
 </style>
 <link rel="stylesheet" href="table.css">
 <link rel="stylesheet" href="pattern-picker.css">
+<link rel="stylesheet" href="pov.css">
 </head>
 <body>
 <header class="top masthead">
@@ -290,6 +291,18 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
 <div class="toast" id="toast" hidden role="status"></div>
 <div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div>
 
+<dialog id="arrival" aria-labelledby="arrival-title">
+  <form><button type="button" class="arrival-close" aria-label="Cancel 取消" hidden>×</button>
+    <span class="arrival-mark" aria-hidden="true">東</span>
+    <h2 id="arrival-title">Take a seat <span lang="zh-Hant">入座</span></h2>
+    <label for="arrival-name">Your name <span>你的名字</span></label>
+    <input id="arrival-name" name="name" required maxlength="24" autocomplete="given-name" placeholder="Name · 名字">
+    <label for="arrival-seat">Your seat <span>你的座位</span></label>
+    <select id="arrival-seat" name="seat"></select>
+    <p id="join-error" role="status"></p><button type="submit">Join table · 加入牌桌</button>
+  </form>
+</dialog>
+<script src="pov.js"></script>
 <script src="pattern-picker.js"></script>
 <script src="rules-guide.js"></script>
 <script src="live-table.js"></script>
@@ -428,7 +441,7 @@ let lbSort = 'pts';
 let state, draft = null, sheetOpen = false, seatDraft = null, focusRule = null, toastTimer = null, dlgYes = null;
 
 function freshState(){
-  const players = [1,2,3,4,5].map(n => ({id:'p'+n, name:'Player '+n}));
+  const players = [1,2,3,4,5].map(n => ({id:'p'+n, name:'Player '+n, openSeat:true}));
   const s = {v:1, money:0, ruleset:DEFAULT_RULESET, opts:{}, players, nextId:6, example:true,
     games:[{id:1, seats:players.slice(0,4).map(p => p.id), hands:[]}]};
   return s;
@@ -465,7 +478,7 @@ function save(){ if (liveTable.active) { liveTable.saveChange(); return; } keep(
 const sync = {hosted:!!(window.claude && window.claude.use), mode:'local', canWrite:null, exists:false, slow:false, lost:false, shown:null, last:null};
 let ref = null, writing = false, dirty = false, slowTimer = null;
 const ro = () => liveTable.viewer || (sync.mode === 'live' && sync.canWrite === false);
-const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink','tableFocus']);
+const RO_OK = new Set(['lbSort','copy','dlgNo','copyTableLink','tableFocus','myView']);
 function refresh(){ render(); if (sheetOpen && draft) renderHand(true); }
 function adopt(d){
   sync.shown = d.stamp;
@@ -631,6 +644,7 @@ function renderTally(){
   $('tally').innerHTML = liveTable.active && !liveTable.available ? '' : tallyHTML();
 }
 function renderSharing(){
+  if (currentView() === 'table') { $('share-action').replaceChildren(); return; }
   const canCreate = !liveTable.active && !sync.hosted;
   $('share-action').innerHTML = liveTable.shareable ? '<button class="share" data-a="copyTableLink">Copy link · 複製連結</button>'
     : canCreate ? '<button class="share" data-a="createLiveTable">Share table · 共享牌桌</button>' : '';
@@ -651,6 +665,7 @@ function render(){
   $('view').innerHTML = liveTable.active && !liveTable.available && v !== 'rules' ? '<p class="card">' + esc(liveTable.status()) + '</p>' : ({table:viewTable, leaderboard:viewLeaderboard, history:viewHistory, rules:viewRules, setup:viewSetup})[v]();
   renderTally();
   renderSharing();
+  mySeat.ensure();
   if (ro() || liveTable.locked) $('view').querySelectorAll('input,select').forEach(e => e.disabled = true);
   if (v === 'rules' && focusRule) {
     const el = $('pat-' + focusRule);
@@ -664,50 +679,41 @@ function viewTable(){
   const gamePoints = gameTotals(g);
   const scores = g.seats.map(pid => tot[pid] || 0);
   const lowest = Math.min(...scores), highest = Math.max(...scores);
+  const bottom = mySeat.bottom();
   const seats = g.seats.map((pid, i) => {
     const w = r.winds[(i - ts.dealer + 4) % 4];
     const points = scores[i], rank = 1 + scores.filter(score => score > points).length;
     const last = points === lowest && lowest < highest;
     const dealer = i === ts.dealer;
-    const wall = (i === 0 || i === 2) ? '<span class="wall-strip" aria-hidden="true">' + '<i></i>'.repeat(13) + '</span>' : '';
+    const position = (i - bottom + 4) % 4;
+    const mine = mySeat.profile?.pid === pid;
+    const wall = position === 0 ? '' : '<span class="concealed-wall" aria-hidden="true">' + '<i></i>'.repeat(13) + '</span>';
     const label = `${pname(pid)}, ${w.en} ${w.zh}家, rank ${rank} 第${rank}名, ${signed(points)} total points 總分${last ? ', last place 末位' : ''}${dealer ? ', Dealer 莊家' : ''}`;
-    return `<button class="seat pos-${i}${dealer ? ' dealer' : ''}" data-a="win" data-p="${pid}" ${ro() ? 'disabled' : ''} aria-label="${esc(label)}">
+    return `<button class="seat pos-${position}${dealer ? ' dealer' : ''}" data-a="win" data-p="${pid}" ${ro() ? 'disabled' : ''} aria-label="${esc(label)}">
       ${wall}<span class="rank-pin ${last ? 'trailing' : points === highest && highest > lowest ? 'leading' : ''}" title="Table rank · 本桌總分排名"><span>#${rank}</span>${last ? '<span class="poop" aria-hidden="true">💩</span>' : ''}</span>
       <span class="wind-tile"><b lang="zh-Hant">${w.zh}</b><small>${w.en}</small></span>
-      <span class="seat-details"><span class="who">${esc(pname(pid))}</span><span class="pts ${cls(points)}">${signed(points)} <small>total 總分</small></span>
+      <span class="seat-details"><span class="who">${esc(pname(pid))}${mine ? ' <small class="is-me">You 你</small>' : ''}</span><span class="pts ${cls(points)}">${signed(points)} <small>total 總分</small></span>
         ${state.games.length > 1 ? `<small class="game-points">${signed(gamePoints[pid])} this game 本場</small>` : ''}</span>
       ${dealer ? '<span class="dealer-tab">Dealer 莊</span>' : ''}
     </button>`;
   }).join('');
   const rw = r.winds[ts.round];
-  const rack = (position, tiles) => `<div aria-hidden="true" class="corner-rack ${position}">${tiles.map(mahjongTileFace).join('')}</div>`;
   const focus = document.body.classList.contains('table-focus');
   return `
     ${sync.mode === 'live' && !sync.exists ? (ro()
       ? '<p class="note">Waiting for shared scores · 等待共享分數</p>'
       : '<div class="resume"><span>Saved on this device · 分數儲存在此裝置</span><button data-a="shareNow">Share 共享</button></div>') : ''}
-    <section class="table-stage" aria-label="Mahjong table 麻將桌">
-      <div class="felt">
-        <div class="table-line" aria-hidden="true">${'<i></i>'.repeat(4)}</div>
-        <div class="board-caption"><b>Game ${String(state.games.length).padStart(2,'0')}</b><span>第 ${state.games.length} 場</span></div>
-        <button class="expand-table" data-a="tableFocus" aria-pressed="${focus}" title="${focus ? 'Exit full screen · 離開全螢幕' : 'Full screen · 全螢幕'}" aria-label="${focus ? 'Exit full screen · 離開全螢幕' : 'Full screen · 全螢幕'}"><i aria-hidden="true"></i></button>
-        ${rack('rack-one',['1p','2p','3p'])}${rack('rack-two',['C','F','P'])}
-        <div class="seat-ring">${seats}
-          <div class="centre"><div class="round-dial"><div class="dial-face">
-            <span class="round" lang="zh-Hant">${rw.zh}</span><b>${rw.en} round</b><small>圈風</small>
-          </div></div><span class="hand">Hand ${ts.handNo} · 第 ${ts.handNo} 局</span></div>
-        </div>
-        <div class="board-hint">${ro() ? 'Watching · 觀戰中' : 'Tap a winner · 點選和牌者'}</div>
-      </div>
-    </section>
-    <div class="table-controls">
-      <span class="table-rule"><b>Hong Kong <span lang="zh-Hant">香港</span></b><span>${O().minFan} fan minimum 起和 · ${O().limitFan} fan cap 封頂</span></span>
-      <div class="table-buttons eo">
-        <button class="btn" data-a="openSeats">Seats <span>座位</span></button>
-        <button class="btn" data-a="drawHand">Draw <span>流局</span></button>
-        <button class="btn" data-a="undoAsk" ${g.hands.length ? '' : 'disabled'}>Undo <span>撤銷</span></button>
-      </div>
-    </div>`;
+    <section class="table-stage pov-stage" aria-label="Mahjong table · 麻將桌">
+      <div class="scene-label"><b>Game ${String(state.games.length).padStart(2,'0')}</b><small>第 ${state.games.length} 場</small></div>
+      <div class="scene-tools"><button class="view-chip" data-a="myView">My seat · 我的座位</button>
+        <button class="expand-table" data-a="tableFocus" aria-pressed="${focus}" aria-label="${focus ? 'Exit full screen · 離開全螢幕' : 'Full screen · 全螢幕'}"><i aria-hidden="true"></i></button></div>
+      <div class="seat-ring pov-seats">${seats}</div>
+      <div class="pov-centre"><span class="wind-counter"><b>${rw.zh}</b><small>${rw.en} round · 圈風</small></span>
+        <span class="hand-counter">Hand ${ts.handNo} · 第 ${ts.handNo} 局</span></div>
+      <div class="score-tiles eo">${commandTile('流','Draw','流局','drawHand')}${commandTile('撤','Undo','撤銷','undoAsk',{disabled:!g.hands.length})}</div>
+      <p class="pov-hint">${ro() ? 'Watching the table · 觀戰中' : 'Tap the winner · 點選和牌者'}</p>
+      ${actionRack()}
+    </section>`;
 }
 
 /* ============================ leaderboard ============================ */
@@ -949,7 +955,16 @@ const A = {
     } catch { nativeTableFocus = false; }
     if (enter) window.scrollTo(0, 0);
   },
-  createLiveTable(){ liveTable.create(); },
+  myView(){ mySeat.show(); },
+  createLiveTable(){
+    const profile = mySeat.profile;
+    liveTable.create();
+    if (profile && liveTable.active) {
+      mySeat.remember(profile);
+      if ($('arrival').open) $('arrival').close();
+      render();
+    }
+  },
   copyTableLink(){ liveTable.copyLink(); },
   lbSort(b){ lbSort = b.dataset.k; render(); },
   shareNow(){ save(); toast('Sharing scores… 正在共享分數…'); },
@@ -1040,6 +1055,14 @@ const A = {
     state.games = [{id:1, seats:game().seats.slice(), hands:[]}]; draft = null; save(); render(); toast('Scores cleared · 已清除分數'); }); }
 };
 
+$('arrival').querySelector('form').addEventListener('submit', mySeat.join);
+$('arrival').querySelector('.arrival-close').addEventListener('click', () => $('arrival').close());
+$('arrival').addEventListener('cancel', e => { if (!mySeat.profile) e.preventDefault(); });
+$('arrival-name').addEventListener('input', e => {
+  const match = game().seats.find(id => !player(id).openSeat && pname(id).toLocaleLowerCase() === e.target.value.trim().toLocaleLowerCase());
+  if (match) $('arrival-seat').value = match;
+  $('join-error').textContent = '';
+});
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]');
   if (!b || b.disabled || !A[b.dataset.a]) return;
@@ -1052,7 +1075,7 @@ document.addEventListener('change', e => {
   if (ro() || liveTable.locked) { render(); return; }
   if (t.classList.contains('pname')) {
     const p = player(t.dataset.p), v = t.value.trim();
-    if (p && v) { p.name = v; state.example = false; save(); render(); } else if (p) t.value = p.name;
+    if (p && v) { p.name = v; p.openSeat = false; state.example = false; save(); render(); } else if (p) t.value = p.name;
   } else if (t.dataset.opt) {
     const op = R().options.find(x => x.key === t.dataset.opt), c = op.choices.find(x => String(x[0]) === t.value);
     O()[op.key] = c[0]; save(); render();

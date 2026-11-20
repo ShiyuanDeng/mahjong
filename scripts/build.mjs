@@ -2,9 +2,10 @@
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 
 const assets = {};
-for (const name of ['index.html', 'rules-guide.js', 'live-table.js', 'table.css', 'pattern-picker.js', 'pattern-picker.css']) {
+for (const name of ['index.html', 'rules-guide.js', 'live-table.js', 'table.css', 'pattern-picker.js', 'pattern-picker.css', 'pov.js', 'pov.css']) {
   assets[name] = await readFile(new URL('../' + name, import.meta.url), 'utf8');
 }
+assets['pov-room.webp'] = await readFile(new URL('../pov-room.webp', import.meta.url), 'base64');
 const worker = await readFile(new URL('../worker.mjs', import.meta.url), 'utf8');
 await mkdir('dist/server', {recursive:true});
 await writeFile('dist/server/index.js', 'const ASSETS = ' + JSON.stringify(assets) + ';\n' + worker);

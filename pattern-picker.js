@@ -114,19 +114,26 @@ function patternCard(p, d){
   const label = '<span class="pc-names"><strong>' + esc(p.en) + '</strong><span lang="zh-Hant">' + esc(p.zh) + '</span></span>';
   const explain = '<span class="pc-caption">' + esc(en) + '<span lang="zh-Hant">' + esc(zh) + '</span></span>';
   const main = art + label + explain + (constraint ? '<span class="pc-restrict">' + constraint + '</span>' : '');
-  const li = counter ? '<div class="pc-main">' + main + '</div>' :
-    '<button class="pc-main pat-main" data-a="pick" data-id="' + p.id + '" aria-pressed="' + !!n + '" ' + (ok ? '' : 'disabled') + '>' + main + '</button>';
+  const attributes = counter ? 'data-a="inc" aria-label="Add ' + name + ' 加一"' : 'data-a="pick" aria-pressed="' + !!n + '"';
+  const li = '<button class="pc-main pat-main" ' + attributes + ' data-id="' + p.id + '" ' +
+    (!ok || (counter && n >= p.max) ? 'disabled' : '') + '>' + main + '</button>';
   const step = counter ? '<span class="pc-step"><button data-a="dec" data-id="' + p.id + '" aria-label="One fewer ' + name + ' 減一" ' + (n ? '' : 'disabled') + '>−</button><output aria-label="' + name + ' count 數量">' + n + '</output><button data-a="inc" data-id="' + p.id + '" aria-label="One more ' + name + ' 加一" ' + (ok && n < p.max ? '' : 'disabled') + '>+</button></span>' : '';
   return '<article class="pc-card' + (n ? ' is-picked' : '') + (!ok ? ' unavailable' : '') + '">' + li +
     '<div class="pc-tools"><span class="pc-fan">' + fanLabel(p.fan) + '</span>' + step + '<button class="pc-info" data-a="info" data-id="' + p.id + '" aria-label="Explain ' + name + ' 查看說明">i</button></div></article>';
 }
 
 function patternPickerHTML(r, d){
-  const group = d.pickerGroup || 'all';
-  const filters = [{id:'all', en:'All', zh:'全部'}, ...PICKER_GROUPS].map(g =>
-    '<button data-a="pickerGroup" data-id="' + g.id + '" aria-pressed="' + (g.id === group) + '">' + g.en + ' <span lang="zh-Hant">' + g.zh + '</span></button>').join('');
-  const groups = PICKER_GROUPS.filter(g => group === 'all' || g.id === group).map(g =>
-    '<section class="pc-section"><h3>' + g.en + ' <span lang="zh-Hant">' + g.zh + '</span></h3><div class="pc-grid">' +
-    r.patterns.filter(p => p.group === g.id).map(p => patternCard(p, d)).join('') + '</div></section>').join('');
-  return '<section class="pc-picker"><h2>Scoring patterns <span lang="zh-Hant">計番牌型</span></h2><div class="pc-filter" role="group" aria-label="Filter patterns 篩選番種">' + filters + '</div>' + groups + '</section>';
+  const group = d.pickerGroup || 'shape';
+  const tabs = [...PICKER_GROUPS, {id:'adjust', en:'Adjust', zh:'加減'}];
+  const filters = tabs.map(g => {
+    const count = g.id === 'adjust' ? d.adj : r.patterns.filter(p => p.group === g.id).reduce((sum,p) => sum + (d.picks[p.id] || 0), 0);
+    return `<button data-a="pickerGroup" data-id="${g.id}" aria-pressed="${g.id === group}">${g.en} <span lang="zh-Hant">${g.zh}</span>${count ? ` <b class="pick-count">${count}</b>` : ''}</button>`;
+  }).join('');
+  const field = group === 'adjust'
+    ? `<div class="adj"><span><b>House adjustment 自訂加減番</b><br>Adjust by table agreement. 依本桌約定加減番。</span>
+          <span class="step"><button data-a="adj" data-n="-1" aria-label="One fan less 減一番" ${d.adj <= -9 ? 'disabled' : ''}>−</button><output>${signed(d.adj)}</output><button data-a="adj" data-n="1" aria-label="One fan more 加一番" ${d.adj >= 13 ? 'disabled' : ''}>+</button></span></div>`
+    : `<div class="pc-grid">${r.patterns.filter(p => p.group === group).map(p => patternCard(p, d)).join('')}</div>`;
+  return `<section class="pc-picker" aria-label="Scoring patterns 計番牌型">
+    <div class="pc-filter" role="group" aria-label="Pattern categories 牌型分類">${filters}</div>
+    <div class="sheet-body scoring-field" tabindex="0" aria-label="Pattern tiles 選擇牌型">${field}</div></section>`;
 }

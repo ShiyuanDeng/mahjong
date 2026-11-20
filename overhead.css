@@ -1,0 +1,119 @@
+/* The four source markers follow the player's seat around the scoring felt. */
+#handsheet:not([hidden]) {
+  --pc-ink: #fff4d9;
+  --pc-hint: #e1e7cc;
+  --picker-line: #d3c58f4d;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100dvh;
+  background: #19251d;
+  color: var(--pc-ink);
+}
+.score-rail {
+  display: flex; align-items: center; gap: 14px;
+  padding: 8px clamp(12px, 3vw, 40px);
+  background: #202b24; border-bottom: 1px solid #ad8a53;
+}
+.score-rail h2 {margin: 0; font: bold clamp(1.1rem, 2vw, 1.65rem)/1.2 Georgia, serif; overflow-wrap: anywhere}
+.score-rail h2 small {font-size: .75em; color: #e2c98c}
+.score-rail > span {color: #dfd9bf; font-size: .85rem}
+.score-rail button {margin-left: auto; flex: none; padding: 8px 12px; border: 1px solid #928b70; border-radius: 5px; color: #f3ecd5; background: transparent}
+.overhead-board {
+  display: grid;
+  grid-template: ". north ." auto "west patterns east" minmax(0,1fr) ". south ." auto /
+    minmax(75px, 1fr) minmax(0, 920px) minmax(75px, 1fr);
+  padding: clamp(12px, 3vh, 30px) clamp(8px, 2.2vw, 35px);
+  isolation: isolate; overflow: hidden; min-height: 0; gap: 5px;
+  background: #1d513c url('overhead-table.webp') center / 100% 100% no-repeat;
+}
+.edge-seat {position: relative; align-self: center; justify-self: center; display: grid; grid-template-columns: minmax(0,1fr); place-items: center; max-width: 100%; min-width: 0}
+.edge-0 {grid-area: south}.edge-1 {grid-area: east}.edge-2 {grid-area: north}.edge-3 {grid-area: west}
+.edge-wall {max-width: 100%; min-width: 0; display: flex; align-items: stretch; justify-content: center; filter: drop-shadow(0 3px 2px #06171199)}
+.edge-wall i {width: clamp(9px, 1.25vw, 18px); height: 11px; border-radius: 2px; border: 1px solid #434932; background: linear-gradient(135deg,#859972,#586e4d); box-shadow: inset 0 -2px #ddd6af}
+.edge-0 .edge-wall {order: 1}
+.source-seat {
+  position: relative; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px 7px;
+  max-width: 100%; padding: 6px 10px; border: 1px solid #ad9462; border-radius: 4px;
+  color: #fff2d0; background: linear-gradient(150deg,#5e4731,#30271d);
+  box-shadow: inset 0 0 0 2px #4a3829, 0 3px 4px #0c211d99;
+}
+.source-seat[aria-pressed=true] {border-color: #ffe3a4; box-shadow: 0 0 0 2px #d7ae5f,0 3px 8px #0a201a; background: linear-gradient(155deg,#655738,#40391f)}
+.seat-wind {font: bold 1.15rem/1 Georgia,serif; color: #e1c58a}
+.source-person {display: flex; flex-direction: column; line-height: 1.15; min-width: 0; max-width: 100%}
+.source-person b {overflow-wrap: anywhere}.source-person small {font-size: .73rem; color: #e4d6ad}
+.source-kind {font-size: .72rem; color: #ffedbd}
+.edge-1 .source-seat,.edge-3 .source-seat {flex-direction: column}
+#handsheet .pc-picker {grid-area: patterns; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0,1fr); gap: 6px; align-self: stretch}
+#handsheet .pc-filter {justify-content: center; gap: 5px}
+#handsheet .pc-filter button {
+  border-radius: 4px; padding: 5px 10px; color: #312e25; background: linear-gradient(#f0e7cd,#ddcfac);
+  border: 1px solid #b19f76; box-shadow: 0 2px 0 #8a704f,0 3px 4px #163023;
+}
+#handsheet .pc-filter button[aria-pressed=true] {color: #fff6df; background: #654c2e; border-color: #dcb975}
+.pick-count {font-size: .8em; padding-inline: 3px; border-radius: 3px; background: #172c2033}
+#handsheet .scoring-field {min-height: 0; padding: 4px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b9b58c #193e2c}
+#handsheet .pc-grid {gap: 10px; align-content: start}
+#handsheet .pc-card {border: 1px solid #dfd4a341; border-radius: 6px; background: #0d291c2e; box-shadow: none}
+#handsheet .pc-card.is-picked {background: #273e1ebd; border-color: #f9d18b; box-shadow: inset 0 0 0 1px #f9d18b}
+#handsheet .pc-art {--mj-tile-width: clamp(23px,2.4vw,36px); min-height: 72px; margin: 0; padding: 12px 6px; background: none}
+#handsheet .mj-face {filter: drop-shadow(1px 3px 1px #0b1e1666)}
+#handsheet .pc-main:hover:not(:disabled) .mj-set {transform: translateY(-2px)}
+#handsheet .pc-names strong {font: bold 1.1rem/1.2 Georgia,serif}
+#handsheet .pc-caption {font-size: .8rem}
+#handsheet .pc-restrict {color: #ffd3a5}
+#handsheet .pc-step button,#handsheet .step button {color: #ffebbb}
+#handsheet .adj {background: #183d2dcf; border-color: #c1b17e; padding: 12px}
+#handsheet :focus-visible {outline: 3px solid #f4c76f; outline-offset: -2px}
+#handsheet .sheet-foot {background: #f4edda; color: #232e26; border-color: #a98d5a; padding: 8px clamp(10px,3vw,44px) max(8px,env(safe-area-inset-bottom)); max-height: 30dvh}
+#handsheet .sheet-foot .in {display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: center; max-width: 1120px}
+#handsheet .sheet-foot .btn {background: #214e3c; color: #fff6e0; border-color: #193f30}
+#handsheet .sheet-foot .btn:disabled {background: #dedac9; color: #655f51; opacity: 1; border-color: #c4baa4}
+#handsheet .sheet-foot .why {color: #515b4e}
+@media (max-width:800px) {
+  .overhead-board {grid-template-columns: 70px minmax(0,1fr) 70px}
+  #handsheet .pc-grid {grid-template-columns: repeat(2,minmax(0,1fr))}
+  .source-seat {padding: 5px}.edge-1 .edge-wall,.edge-3 .edge-wall {max-width: 100%}
+}
+@media (max-width:600px) {
+  .score-rail {gap: 7px; padding: 5px 9px}.score-rail > span {font-size: .74rem}
+  .overhead-board {grid-template-columns: 47px minmax(0,1fr) 47px; gap: 3px; padding: 10px 6px}
+  .edge-1,.edge-3 {width: 100%}.edge-1 .source-seat,.edge-3 .source-seat {width: 100%; padding: 5px 2px}
+  .edge-1 b,.edge-3 b {font-size: .8rem}.source-kind,.source-person small {font-size: .67rem}.edge-wall i {height: 7px}
+  #handsheet .pc-filter {display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px}
+  #handsheet .pc-filter button {position: relative; font-size: .75rem; line-height: 1.1; padding: 3px 1px; min-height: 35px}
+  #handsheet .pc-filter button span {display: block}
+  #handsheet .pick-count {position: absolute; right: 2px; bottom: 2px; border-radius: 50%; font-size: .67rem; background: #ecd7a4; color: #40321c}
+  #handsheet .pc-grid {gap: 5px}
+  #handsheet .pc-art {--mj-tile-width: 19px; min-height: 50px; padding: 7px 2px; gap: 3px}
+  #handsheet .pc-names,#handsheet .pc-caption,#handsheet .pc-restrict {margin-inline: 5px}
+  #handsheet .pc-names strong {font-size: .94rem}
+  #handsheet .pc-caption {font-size: .75rem}
+  #handsheet .pc-tools {padding: 2px 3px; gap: 2px}
+  #handsheet .sheet-foot .in {gap: 6px}
+  #handsheet .sheet-foot .btn {max-width: 100px; line-height: 1.25; padding: 7px}
+  #handsheet .sum {gap: 1px 6px}#handsheet .sum .big {font-size: 1.15rem}
+  #handsheet .sum .why,#handsheet .pays,#handsheet .warn {font-size: .77rem}
+}
+@media (max-width:360px) {
+  #handsheet .pc-grid {grid-template-columns: minmax(0,1fr)}
+}
+@media (max-height:500px) and (orientation:landscape) {
+  .score-rail {padding-block: 2px}.score-rail button {padding-block: 4px}
+  .overhead-board {padding-block: 5px; gap: 1px}
+  .edge-wall {display: none}.source-seat {padding-block: 2px}
+  #handsheet .pc-picker {gap: 2px}#handsheet .pc-filter button {min-height: 26px}
+  #handsheet .sheet-foot {padding-block: 3px}
+}
+html[data-camera] .pov-stage {view-transition-name: mahjong-camera}
+html[data-camera]:has(#handsheet:not([hidden])) .pov-stage {view-transition-name: none}
+html[data-camera] #handsheet:not([hidden]) {view-transition-name: mahjong-camera}
+html[data-camera]::view-transition {pointer-events: none}
+html[data-camera]::view-transition-group(mahjong-camera) {animation-duration: 440ms}
+html[data-camera=overhead]::view-transition-old(mahjong-camera),
+html[data-camera=seated]::view-transition-new(mahjong-camera) {animation: leave-chair 440ms ease-in both}
+html[data-camera=overhead]::view-transition-new(mahjong-camera),
+html[data-camera=seated]::view-transition-old(mahjong-camera) {animation: above-table 440ms ease-out both}
+html[data-camera=seated]::view-transition-new(mahjong-camera),
+html[data-camera=seated]::view-transition-old(mahjong-camera) {animation-direction: reverse}
+@keyframes leave-chair {to {opacity: 0; transform: perspective(1200px) rotateX(16deg) scale(.93)}}
+@keyframes above-table {from {opacity: 0; transform: perspective(1200px) rotateX(24deg) scale(1.08)}}

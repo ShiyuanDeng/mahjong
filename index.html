@@ -266,6 +266,7 @@ summary{cursor:pointer;min-height:40px;padding-top:8px}
 <link rel="stylesheet" href="table.css">
 <link rel="stylesheet" href="pattern-picker.css">
 <link rel="stylesheet" href="pov.css">
+<link rel="stylesheet" href="overhead.css">
 </head>
 <body>
 <header class="top masthead">
@@ -854,39 +855,71 @@ function viewSetup(){
 }
 
 /* ============================ hand sheet ============================ */
+function scoringSeats(d){
+  const g = game(), ts = tableState(g), bottom = mySeat.bottom(), totals = allTotals();
+  return g.seats.map((id, i) => {
+    const wind = R().winds[(i - ts.dealer + 4) % 4];
+    const winner = id === d.winner, source = winner ? 'self' : id;
+    const label = winner ? 'Self-draw 自摸' : 'Discard 放銃';
+    const pos = (i - bottom + 4) % 4;
+    return `<div class="edge-seat edge-${pos}"><span class="edge-wall" aria-hidden="true">${'<i></i>'.repeat(9)}</span>
+      <button class="source-seat" data-a="from" data-p="${source}" aria-pressed="${d.from === source}"
+        aria-label="${esc(pname(id))}, ${wind.en} ${wind.zh}, ${label}, ${signed(totals[id])} total points 總分">
+        <span class="seat-wind" aria-hidden="true">${wind.zh}</span><span class="source-person"><b>${esc(pname(id))}</b><small>${wind.en} · ${signed(totals[id])} 分</small></span>
+        <span class="source-kind">${label}</span></button></div>`;
+  }).join('');
+}
+
+let activeCamera = null, cameraPending = false;
+function changeCamera(direction, update){
+  const root = document.documentElement;
+  if (cameraPending) return;
+  activeCamera?.skipTransition();
+  if (currentView() !== 'table' || matchMedia('(prefers-reduced-motion: reduce)').matches) { update(); return; }
+  if (document.startViewTransition) {
+    root.dataset.camera = direction;
+    cameraPending = true;
+    const transition = document.startViewTransition(() => {
+      try { update(); } finally { cameraPending = false; }
+    });
+    activeCamera = transition;
+    transition.finished.finally(() => {
+      if (activeCamera === transition) { activeCamera = null; delete root.dataset.camera; }
+    });
+  } else {
+    update();
+    const scene = direction === 'overhead' ? $('handsheet') : document.querySelector('.pov-stage');
+    scene?.animate([{opacity:.25,transform:'perspective(1000px) rotateX(12deg) scale(.96)'},{opacity:1,transform:'none'}],{duration:300,easing:'ease-out'});
+  }
+}
 function renderHand(keepScroll){
   const el = $('handsheet'), r = R(), o = O(), g = game(), d = draft;
+  const opening = el.hidden;
   const focused = el.contains(document.activeElement) ? document.activeElement.dataset : null;
   const old = el.querySelector('.sheet-body'), top = keepScroll && old ? old.scrollTop : 0;
   const sc = scoreDraft(d);
-  const others = g.seats.filter(p => p !== d.winner);
-  const how = `<div class="pc-methods" role="group" aria-label="Winning tile 和牌來源">
-    <button class="chip" data-a="from" data-p="self" aria-pressed="${d.from === 'self'}">Self-draw <span lang="zh-Hant">自摸</span></button>
-    ${others.map(p => `<button class="chip" data-a="from" data-p="${p}" aria-pressed="${d.from === p}"><span class="pc-discard">Discard 放銃</span><strong>${esc(pname(p))}</strong></button>`).join('')}</div>`;
-  const groups = patternPickerHTML(r, d);
   let pays = '', why = '';
   if (d.from) {
     const st = r.settle({fan:sc.fan, winner:d.winner, from:d.from === 'self' ? null : d.from, seats:g.seats}, o);
     pays = `<div class="pays num">${g.seats.filter(p => st.deltas[p]).map(p => `<span>${esc(pname(p))} <b class="amt ${cls(st.deltas[p])}">${signed(st.deltas[p])}</b></span>`).join('')}</div>`;
   }
-  if (!d.from) why = 'Choose self-draw or a discarder. 請選自摸或放銃者。';
+  if (!d.from) why = 'Tap the winner for self-draw, or tap the discarder. 自摸點贏家，放銃點出牌者。';
   else if (!sc.ok) why = `Minimum ${o.minFan} fan · 至少 ${o.minFan} 番才能和牌。`;
   const parts = sc.lines.map(l => patternLineName(l.zh + (l.n > 1 ? '×' + l.n : ''), r)).concat(d.adj ? ['Adjustment 調整 ' + signed(d.adj)] : []);
   el.innerHTML = `
-    <div class="sheet-head"><h2 id="hs-title">${esc(pname(d.winner))} wins 和牌</h2><button data-a="cancelHand">Cancel 取消</button></div>
-    <div class="sheet-tally">${tallyHTML()}</div>
-    <div class="sheet-body"><div class="sheet-in">
-      <div class="pc-method"><div class="sec-h">Winning tile 和牌來源</div>${how}</div>
-      ${groups}
-      <div class="adj"><span><b>House adjustment 自訂加減番</b><br><span class="sub">Adjust fan by table agreement. 依本桌約定加番或減番。</span></span>
-        <span class="step"><button data-a="adj" data-n="-1" aria-label="One fan less 減一番">−</button><output>${signed(d.adj)}</output><button data-a="adj" data-n="1" aria-label="One fan more 加一番">+</button></span></div>
-    </div></div>
+    <div class="score-rail"><h2 id="hs-title" tabindex="-1">${esc(pname(d.winner))} wins <small lang="zh-Hant">和牌</small></h2>
+      <span>Hand ${tableState(g).handNo} · 第 ${tableState(g).handNo} 局</span><button data-a="cancelHand">Cancel 取消</button></div>
+    <div class="overhead-board">${scoringSeats(d)}${patternPickerHTML(r,d)}</div>
     <div class="sheet-foot"><div class="in">
-      <div class="sum"><span class="big">${sc.limit ? 'Limit 爆棚 · ' : ''}${sc.fan} fan 番</span><span class="why">${parts.length ? esc(parts.join(' + ')) : 'No patterns selected · 尚未選擇番種'}${sc.capped ? ` · ${sc.raw} fan 番 · limit 封頂 ${o.limitFan}` : ''}</span></div>
-      ${pays}${why ? `<div class="warn">${why}</div>` : ''}
+      <div class="score-readout"><div class="sum"><span class="big">${sc.limit ? 'Limit 爆棚 · ' : ''}${sc.fan} fan 番</span><span class="why">${parts.length ? esc(parts.join(' + ')) : 'Select patterns · 選擇牌型'}${sc.capped ? ` · ${sc.raw} fan 番 · limit 封頂 ${o.limitFan}` : ''}</span></div>
+      ${pays}${why ? `<div class="warn">${why}</div>` : ''}</div>
       <button class="btn primary" data-a="record" ${sc.ok ? '' : 'disabled'}>Record hand 記錄本局</button>
     </div></div>`;
   el.hidden = false; sheetOpen = true;
+  if (opening) {
+    document.querySelector('.masthead').inert = document.querySelector('.wrap').inert = true;
+    $('hs-title').focus({preventScroll:true});
+  }
   if (top) el.querySelector('.sheet-body').scrollTop = top;
   if (keepScroll && focused && focused.a) {
     const target = Array.from(el.querySelectorAll('[data-a]')).find(b =>
@@ -894,7 +927,10 @@ function renderHand(keepScroll){
     if (target && !target.disabled) target.focus({preventScroll:true});
   }
 }
-function closeHand(){ $('handsheet').hidden = true; sheetOpen = false; }
+function closeHand(){
+  $('handsheet').hidden = true; sheetOpen = false;
+  document.querySelector('.masthead').inert = document.querySelector('.wrap').inert = false;
+}
 
 /* ============================ seat sheet ============================ */
 function renderSeats(){
@@ -931,6 +967,7 @@ function undoLast(){ const g = game(); if (g.hands.length) { g.hands.pop(); save
 // Browsers without document fullscreen still get the expanded table layout.
 let nativeTableFocus = false;
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && sheetOpen) { A.cancelHand(); return; }
   if (e.key === 'Escape' && !document.fullscreenElement && document.body.classList.contains('table-focus')) {
     document.body.classList.remove('table-focus');
     render();
@@ -968,14 +1005,21 @@ const A = {
   copyTableLink(){ liveTable.copyLink(); },
   lbSort(b){ lbSort = b.dataset.k; render(); },
   shareNow(){ save(); toast('Sharing scores… 正在共享分數…'); },
-  win(b){ draft = {winner:b.dataset.p, from:null, picks:{}, adj:0}; renderHand(false); render(); },
-  pickerGroup(b){ draft.pickerGroup = b.dataset.id; renderHand(true); },
+  win(b){ changeCamera('overhead', () => {
+    draft = {winner:b.dataset.p, from:null, picks:{}, adj:0}; renderHand(false); render();
+  }); },
+  pickerGroup(b){ draft.pickerGroup = b.dataset.id; renderHand(true); $('handsheet').querySelector('.scoring-field').scrollTop = 0; },
   resumeHand(){
+    if (currentView() !== 'table') location.hash = '#table';
     renderHand(false); render();
     const ruleButton = Array.from($('handsheet').querySelectorAll('[data-a="info"]')).find(b => b.dataset.id === draft.lastRule);
     if (ruleButton) { ruleButton.scrollIntoView({block:'center'}); ruleButton.focus({preventScroll:true}); }
   },
-  cancelHand(){ draft = null; closeHand(); render(); },
+  cancelHand(){ changeCamera('seated', () => {
+    const id = draft?.winner;
+    draft = null; closeHand(); render();
+    document.querySelector(`.pov-stage .seat[data-p="${id}"]`)?.focus({preventScroll:true});
+  }); },
   from(b){
     draft.from = b.dataset.p;
     R().patterns.forEach(p => { if (!allowed(p, draft)) delete draft.picks[p.id]; });
@@ -995,16 +1039,21 @@ const A = {
   adj(b){ draft.adj = Math.max(-9, Math.min(13, draft.adj + Number(b.dataset.n))); renderHand(true); },
   info(b){ draft.lastRule = focusRule = b.dataset.id; closeHand(); if (currentView() === 'rules') render(); else location.hash = '#rules'; },
   record(){
-    const r = R(), o = O(), g = game(), ts = tableState(g), sc = scoreDraft(draft);
-    if (!sc.ok) return;
-    const from = draft.from === 'self' ? null : draft.from;
-    const st = r.settle({fan:sc.fan, winner:draft.winner, from, seats:g.seats}, o);
-    g.hands.push({kind:'win', winner:draft.winner, from, picks:{...draft.picks}, adj:draft.adj, fan:sc.fan, limit:sc.limit, base:st.base,
-      deltas:st.deltas, round:ts.round, dealer:g.seats[ts.dealer], lines:sc.lines.map(l => l.zh + (l.n > 1 ? '×' + l.n : ''))});
-    const msg = `${pname(draft.winner)} +${st.deltas[draft.winner]} (${sc.fan} fan 番)`;
-    draft = null; closeHand(); save();
-    if (currentView() !== 'table') location.hash = '#table'; else render();
-    window.scrollTo(0, 0); toast(msg, true);
+    changeCamera('seated', () => {
+      if (!draft) return;
+      const r = R(), o = O(), g = game(), ts = tableState(g), sc = scoreDraft(draft);
+      if (!sc.ok) return;
+      const from = draft.from === 'self' ? null : draft.from;
+      const st = r.settle({fan:sc.fan, winner:draft.winner, from, seats:g.seats}, o);
+      g.hands.push({kind:'win', winner:draft.winner, from, picks:{...draft.picks}, adj:draft.adj, fan:sc.fan, limit:sc.limit, base:st.base,
+        deltas:st.deltas, round:ts.round, dealer:g.seats[ts.dealer], lines:sc.lines.map(l => l.zh + (l.n > 1 ? '×' + l.n : ''))});
+      const msg = `${pname(draft.winner)} +${st.deltas[draft.winner]} (${sc.fan} fan 番)`;
+      const id = draft.winner;
+      draft = null; closeHand(); save();
+      if (currentView() !== 'table') location.hash = '#table'; else render();
+      window.scrollTo(0, 0); toast(msg, true);
+      document.querySelector(`.pov-stage .seat[data-p="${id}"]`)?.focus({preventScroll:true});
+    });
   },
   drawHand(){
     const g = game(), ts = tableState(g), deltas = {}; g.seats.forEach(p => deltas[p] = 0);
